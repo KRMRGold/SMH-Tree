@@ -2,50 +2,68 @@
 
 ## Latest candidate run
 
-- **Candidate:** backend 0.0.3
-- **Candidate commit:** `7795b2f2fe68594d713cfe30088d555c03673899`
+- **Candidate:** backend 0.1.0 (M1 — Conversations and branching)
+- **Candidate commit:** b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00
 - **Run date:** 2026-11-11
 - **Environment:** GitHub Actions, Ubuntu 26.04, Python 3.12.16, pytest 9.2.0.
-- **Workflow run:** [Backend CI #4](https://github.com/KRMRGold/SMH-Tree/actions/runs/43106530591)
-- **Candidate status:** Candidate — all M0 tests pass; acceptance is pending the required Git tag.
+- **Workflow run:** [Backend CI #7](https://github.com/KRMRGold/SMH-Tree/actions/runs/43107739858)
+- **Command:** uv sync --dev; uv run pytest
+- **Result:** PASS — 30 passed in 1.07s.
+- **Candidate status:** Tests pass; M1 acceptance is pending the required backend-v0.1.0 Git tag or an explicit user-approved exception.
 
-## Executed checks for backend 0.0.3
+## M1 acceptance checks
 
 | Check | Result | Evidence |
 |---|---|---|
-| Backend test suite | PASS | CI run 4 on the exact candidate commit — 15 passed in 0.77s |
-| Python 3.12 target runtime | PASS | CI setup and test log report Python 3.12.16 |
-| Dependency installation | PASS | `uv sync --dev` completed successfully in CI |
-| Test-client deprecation | PASS | CI test log contains no Starlette/httpx deprecation warning after switching to HTTPX2 |
-| API authentication | PASS | Health and OpenAPI tests cover missing, invalid, and valid bearer tokens |
-| Migration idempotency | PASS | Migration 0001 applies once; repeated application leaves its record unchanged |
-| Section 4 schema inventory | PASS | All 22 specified tables, including both FTS virtual tables, exist |
-| Foreign-key enforcement | PASS | Per-connection pragma is enabled; invalid branch reference raises IntegrityError |
-| SQLite WAL | PASS | Connection reports journal mode `wal` |
-| FTS synchronization | PASS | Inserted message and memory content are searchable through their FTS tables |
-| Data-directory resolution | PASS | Override and Windows, macOS, and Linux resolution cases are tested |
+| Existing M0 regression suite | PASS | All 15 M0 tests remain green in the 30-test run |
+| UUIDv7 generation | PASS | 100 generated IDs parse as UUIDv7 and are unique |
+| Linear history | PASS | Messages resolve in per-branch sequence order |
+| Fork cutoff | PASS | Child inherits only through its fork message |
+| Parent messages after fork | PASS | Later parent messages do not appear in child history |
+| Sibling isolation | PASS | Sibling-only messages remain isolated |
+| Fork of a fork | PASS | Root, child, and grandchild history resolves in chronological order |
+| Fork at inherited ancestor message | PASS | Earlier ancestor target excludes intermediate branch messages |
+| Invalid fork target | PASS | Service rejects a message not visible in selected parent branch |
+| Deep ancestry | PASS | 50-level branch chain resolves all 51 messages without recursion |
+| Sequence uniqueness | PASS | Duplicate per-branch seq rejected by SQLite unique constraint |
+| Project and conversation creation | PASS | Project association and root branch creation verified |
+| Missing project | PASS | Conversation creation rejected; no orphan conversation created |
+| API project/conversation/branch/message flow | PASS | FastAPI TestClient integration flow succeeds |
+| API auth on new routes | PASS | Missing bearer token returns 401 |
 
-## Earlier candidate history
+## Source inspection
+
+- Inspected the M1 commit diff for API routes, repositories, service logic, domain contracts, and tests.
+- Branch history resolution explicitly handles a fork target on an ancestor branch, rather than assuming the target belongs to the immediate parent.
+- Message sequence allocation uses one INSERT...SELECT statement, with the database unique constraint as the final invariant.
+- No schema migration or new third-party dependency was needed.
+
+## Acceptance status and remaining workflow item
+
+- **M1 functional acceptance tests:** PASS.
+- **Python 3.12 CI:** PASS for the exact candidate commit.
+- **Candidate Git tag:** BLOCKED — the connected GitHub integration does not expose tag creation. Create backend-v0.1.0 pointing to b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00, or explicitly accept proceeding without the tag.
+- **M1 overall:** Candidate, not formally accepted yet.
+
+## M0 accepted baseline
+
+- **Backend:** 0.0.3
+- **Source commit:** 7795b2f2fe68594d713cfe30088d555c03673899
+- **CI:** [Backend CI #4](https://github.com/KRMRGold/SMH-Tree/actions/runs/43106530591)
+- **Result:** PASS — 15 tests on Python 3.12.16.
+- **Tag exception:** User explicitly accepted proceeding without backend-v0.0.3. This exception applies to M0 only; M1 still requires its tag unless separately waived.
+
+## Earlier M0 candidate history
 
 | Candidate | Commit | Result |
 |---|---|---|
-| backend 0.0.1 | `d39dfc21fa51a9c69d8a497cb454c717306e0b6f` | 15 passed on Python 3.12; one Starlette deprecation warning because the test setup used plain HTTPX |
-| backend 0.0.2 | `4affe726f5046f53f085685bc48d35e7f56a2ce7` | FAILED: 14 passed, 1 failed. The health test still expected version 0.0.1 after the package version had been bumped to 0.0.2 |
-| backend 0.0.3 | `7795b2f2fe68594d713cfe30088d555c03673899` | 15 passed on Python 3.12 with no deprecation warning |
+| backend 0.0.1 | d39dfc21fa51a9c69d8a497cb454c717306e0b6f | 15 passed on Python 3.12; Starlette deprecation warning for plain HTTPX |
+| backend 0.0.2 | 4affe726f5046f53f085685bc48d35e7f56a2ce7 | FAILED: 14 passed, 1 failed due to stale version assertion |
+| backend 0.0.3 | 7795b2f2fe68594d713cfe30088d555c03673899 | 15 passed on Python 3.12; no deprecation warning |
 
 Failed and superseded candidates remain in Git history; their version identities are not reused.
-
-## Remaining workflow item
-
-| Item | Result | Reason / minimum action |
-|---|---|---|
-| Candidate Git tag | BLOCKED | The connected GitHub integration does not expose a tag-creation action. Create `backend-v0.0.3` pointing to commit `7795b2f2fe68594d713cfe30088d555c03673899`, or explicitly accept proceeding without the tag. |
 
 ## Not run
 
 - Windows-specific runtime checks are deferred; the desktop shell and Windows packaging are later milestones.
-- Desktop, Ollama, remote-provider, and end-to-end checks are not M0 scope.
-
-## Acceptance decision
-
-**M0 is test-passing but not yet formally accepted.** The complete M0 test suite passed on the specified Python 3.12 runtime for the exact backend 0.0.3 commit. Do not begin M1 until the required candidate tag is created or the user explicitly accepts that documented workflow limitation.
+- Ollama, remote-provider, chat-streaming, desktop, and end-to-end checks are not M1 scope.
