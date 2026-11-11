@@ -3,10 +3,10 @@
 ## Current accepted state
 
 - **Project:** SMH-Tree
-- **Last accepted backend version:** 0.0.3
-- **Last accepted source commit:** 7795b2f2fe68594d713cfe30088d555c03673899
+- **Last accepted backend version:** 0.1.0 (M1 — Conversations and branching)
+- **Last accepted source commit:** 263c07c1568060a6cd44d1fb144cf06d5fb9601d
 - **M0 acceptance:** Accepted on 2026-11-11. The user explicitly chose to proceed without creating the required backend-v0.0.3 Git tag. This is a documented workflow exception, not a claim that the tag exists.
-- **Current candidate:** backend 0.1.0 (M1), commit b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00. Its 30-test Python 3.12 CI run passed; acceptance is pending the required backend-v0.1.0 tag or an explicit user-approved exception.
+- **M1 acceptance:** Accepted on 2026-11-11. The required backend-v0.1.0 tag was created and verified. It points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, a documentation follow-up commit whose code tree retains the tested M1 implementation from b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00.
 - **Workflow:** [Development State Machine Workflow](https://github.com/KRMRGold/Meta-Modules/blob/main/workflows/Development-State-Machine-Workflow.md), current canonical version 1.6.1. Project adoption provenance remains 1.6.0 as recorded in Build-spec.md.
 - **Testing module:** Testing and Verification 0.1.2.
 - **Continuity module:** Context Continuity 0.1.2.
@@ -25,7 +25,7 @@
 - FTS5 synchronization triggers for messages and memory.
 - Verification: [Backend CI #4](https://github.com/KRMRGold/SMH-Tree/actions/runs/43106530591), Python 3.12.16, 15 tests passed.
 
-### M1 — Conversations and branching (candidate, tests passed)
+### M1 — Conversations and branching (accepted)
 
 - Create and list projects.
 - Create and list conversations; creation atomically creates a root Main branch.
@@ -35,8 +35,9 @@
 - Resolve branch history without copying messages; parent messages after the fork and sibling messages are excluded.
 - UUIDv7 IDs and UTC ISO-8601 timestamps are generated in Python.
 - API endpoints are authenticated and use the standard error envelope for explicit HTTP errors.
-- Verification: [Backend CI #7](https://github.com/KRMRGold/SMH-Tree/actions/runs/43107739858), exact candidate commit b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00, Python 3.12.16, 30 tests passed.
-- M1 is not yet accepted: backend-v0.1.0 tag has not been created.
+- Verification: [Backend CI #7](https://github.com/KRMRGold/SMH-Tree/actions/runs/43107739858), exact implementation candidate commit b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00, Python 3.12.16, 30 tests passed.
+- Tag: `backend-v0.1.0` points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, the documentation follow-up commit containing the same tested M1 code.
+- Additional user-run verification: Windows 10/11 environment (`win32`), Python 3.12.13, `uv run pytest` — 30 passed in 3.39s. Reported by the user; the exact local checkout SHA was not independently captured in this session.
 
 ## Architecture and invariants
 
@@ -55,8 +56,8 @@
 - No remote gate and transmission audit service yet (M3).
 - No memory services, scope enforcement, context compiler, or epistemic API yet (M4–M6).
 - No desktop shell or packaging yet (M8–M9).
-- M0's candidate tag was intentionally omitted with user acceptance. The M1 tag remains a required acceptance item unless the user separately accepts another exception.
-- M0's local verification used Python 3.13.5; the authoritative Python 3.12.16 CI run passed.
+- M0's candidate tag was intentionally omitted with user acceptance.
+- Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M9 work.
 
 ## Test inventory
 
@@ -85,6 +86,6 @@
 
 ## Current work and next steps
 
-- **M1 candidate:** backend 0.1.0 — 30 tests pass on Python 3.12. Create tag backend-v0.1.0 at commit b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00 or explicitly accept proceeding without it.
-- After M1 acceptance: M2 provider layer and chat streaming.
+- **Next milestone:** M2 — provider layer and chat streaming.
+- Implement the `ModelProvider` protocol, Ollama and OpenAI-compatible adapters, authenticated SSE chat endpoint, run/run-step persistence, and fake-provider tests as defined in Build-spec.md.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
