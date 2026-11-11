@@ -15,6 +15,7 @@ from cogplat import __version__
 from cogplat.config import Settings, ensure_data_dir, load_settings
 from cogplat.db.connection import apply_migrations, connect_db
 from cogplat.domain.chat import ChatRequest
+from cogplat.domain.memory import MemoryCreate, MemoryLifecycleUpdate
 from cogplat.domain.conversation import (
     BranchFork,
     ConversationCreate,
@@ -27,6 +28,8 @@ from cogplat.repos import runs as run_repo
 from cogplat.repos import transmissions as transmission_repo
 from cogplat.services import chat as chat_service
 from cogplat.services import conversations as conversation_service
+from cogplat.services import memory as memory_service
+from cogplat.services.permissions import InvalidAccessContext, build_access_context
 
 
 def create_app(
@@ -110,6 +113,7 @@ def create_app(
                 "branching": True,
                 "chat": True,
                 "streaming": True,
+            "memory": True,
             },
         }
 
@@ -290,6 +294,83 @@ def create_app(
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
+
+
+
+    @app.get("/v1/memory", dependencies=[Depends(require_token)])
+    def get_memory_items(
+        q: str | None = Query(default=None, max_length=500),
+        scope: str | None = Query(default=None),
+        state: str = Query(default="active"),
+        project_id: str | None = Query(default=None),
+        conversation_id: str | None = Query(default=None),
+        branch_id: str | None = Query(default=None),
+        agent_id: str | None = Query(default=None),
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
+        connection=Depends(open_database),
+    ) -> dict[str, object]:
+        try:
+            context = build_access_context(
+                connection, project_id=project_id, conversation_id=conversation_id,
+                branch_id=branch_id, agent_id=agent_id,
+            )
+            items = memory_service.list_memory(
+                connection, context, query=q, scope=scope, state=state,
+                limit=limit, offset=offset,
+            )
+            return {"items": items}
+        except InvalidAccessContext as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_memory_context", "message": str(exc)
+            }) from exc
+        except memory_service.InvalidMemoryScope as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_memory_filter", "message": str(exc)
+            }) from exc
+
+    @app.post("/v1/memory", status_code=201, dependencies=[Depends(require_token)])
+    def post_memory_item(payload: MemoryCreate, connection=Depends(open_database)):
+        try:
+            return memory_service.create_memory(connection, payload)
+        except memory_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+        except memory_service.InvalidMemoryScope as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_memory_scope", "message": str(exc)
+            }) from exc
+
+    @app.get("/v1/memory/{memory_id}", dependencies=[Depends(require_token)])
+    def get_memory_item(
+        memory_id: str,
+        project_id: str | None = Query(default=None),
+        conversation_id: str | None = Query(default=None),
+        branch_id: str | None = Query(default=None),
+        agent_id: str | None = Query(default=None),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(
+                connection, project_id=project_id, conversation_id=conversation_id,
+                branch_id=branch_id, agent_id=agent_id,
+            )
+            return memory_service.get_memory(connection, memory_id, context)
+        except (memory_service.ResourceNotFound, InvalidAccessContext) as exc:
+            raise not_found(str(exc)) from exc
+
+    @app.patch("/v1/memory/{memory_id}", dependencies=[Depends(require_token)])
+    def patch_memory_item(
+        memory_id: str, payload: MemoryLifecycleUpdate,
+        connection=Depends(open_database),
+    ):
+        try:
+            return memory_service.update_memory_lifecycle(connection, memory_id, payload)
+        except memory_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+        except memory_service.InvalidMemoryTransition as exc:
+            raise HTTPException(status_code=409, detail={
+                "code": "invalid_memory_transition", "message": str(exc)
+            }) from exc
 
     @app.get("/v1/transmissions", dependencies=[Depends(require_token)])
     def get_transmissions(connection=Depends(open_database)) -> dict[str, object]:

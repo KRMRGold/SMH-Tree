@@ -39,17 +39,17 @@ def open_migrated_db(path):
 def test_migration_applies_once_and_is_idempotent(tmp_path):
     connection = connect_db(tmp_path / "app.db")
     try:
-        assert apply_migrations(connection) == 2
+        assert apply_migrations(connection) == 3
         first = connection.execute(
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
 
-        assert apply_migrations(connection) == 2
+        assert apply_migrations(connection) == 3
         second = connection.execute(
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
 
-        assert len(first) == 2
+        assert len(first) == 3
         assert [tuple(row) for row in second] == [tuple(row) for row in first]
     finally:
         connection.close()
