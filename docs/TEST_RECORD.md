@@ -1,17 +1,28 @@
 # Test Record
 
-## Latest candidate run
+## Latest accepted run — M2
 
-- **Candidate:** backend 0.2.1 (M2 — Provider layer and chat streaming)
-- **Candidate commit:** ee757c186acf20d31d3fcc0b5a20292cd80ee530
+- **Accepted version:** backend 0.2.1 (M2 — Provider layer and chat streaming)
+- **Implementation commit:** ee757c186acf20d31d3fcc0b5a20292cd80ee530
+- **Accepted tag:** `backend-v0.2.1`
+- **Tag target:** a6dd5a9808a9ea235befbd205a45fe70baf56067 (documentation follow-up commit; tested M2 implementation unchanged)
+- **Failed-candidate tag:** `backend-v0.2.0` → e1eb64313d312c530b866ddfca8eda59dc9391ce.
+- **Tag verification:** Both tag refs were fetched from GitHub and their commit targets matched exactly.
 - **Run date:** 2026-11-11
 - **CI environment:** GitHub Actions, Ubuntu 26.04, Python 3.12.16, pytest 9.2.0.
 - **Workflow run:** [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117)
-- **Command:** `uv sync --dev`; `uv run pytest`
-- **Result:** PASS — 38 passed in 2.42s.
-- **Candidate status:** Tests pass; formal acceptance is pending required Git tags. Tag creation is unavailable through the connected GitHub write actions used in this session. No tag is claimed to exist.
+- **CI command:** `uv sync --dev`; `uv run pytest`
+- **CI result:** PASS — 38 passed in 2.42s.
+- **Additional local run:** User-reported Windows (`win32`), Python 3.12.13, `uv run pytest`; PASS — 38 passed in 5.71s.
+- **Acceptance status:** ACCEPTED — automated suite, cross-platform local verification, and required tags verified.
 
 ## M2 acceptance checks
+
+| Acceptance evidence | Result | Evidence |
+|---|---|---|
+| Failed candidate identity preserved | PASS | `backend-v0.2.0` points to e1eb64313d312c530b866ddfca8eda59dc9391ce |
+| Passing candidate tag | PASS | `backend-v0.2.1` points to a6dd5a9808a9ea235befbd205a45fe70baf56067 |
+| Cross-platform local test run | PASS | User-reported Windows, Python 3.12.13, 38 passed in 5.71s |
 
 | Check | Result | Evidence |
 |---|---|---|
@@ -34,9 +45,9 @@
 - Provider endpoints are configured through environment variables. Persistent provider configuration via `POST /v1/providers` remains deferred.
 
 
-## Latest accepted candidate
+## Previous accepted milestone — M1
 
-- **Candidate:** backend 0.1.0 (M1 — Conversations and branching)
+- **Version:** backend 0.1.0 (M1 — Conversations and branching)
 - **Implementation commit:** b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00
 - **Accepted tag:** `backend-v0.1.0`
 - **Tag target:** 263c07c1568060a6cd44d1fb144cf06d5fb9601d (documentation follow-up commit; tested M1 code unchanged)
@@ -96,7 +107,6 @@ Failed and superseded candidates remain in Git history; their version identities
 
 ## Not run
 
-- M2 test suite on the user's Windows checkout; the M1 Windows run passed, but M2 Windows verification is still pending.
 - Live Ollama runtime with an installed model; the adapter was tested against a local mocked HTTP server.
 - Live OpenAI-compatible remote provider; the adapter was tested against a mocked HTTP server and no real API key or user data was transmitted.
 - Desktop and end-to-end flows remain M8–M9 work.

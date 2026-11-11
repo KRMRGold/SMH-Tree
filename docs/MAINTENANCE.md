@@ -3,21 +3,16 @@
 ## Current accepted state
 
 - **Project:** SMH-Tree
-- **Last accepted backend version:** 0.1.0 (M1 — Conversations and branching)
-- **Last accepted source commit:** 263c07c1568060a6cd44d1fb144cf06d5fb9601d
+- **Last accepted backend version:** 0.2.1 (M2 — Provider layer and chat streaming)
+- **Last accepted implementation commit:** ee757c186acf20d31d3fcc0b5a20292cd80ee530
+- **Last accepted tag target:** a6dd5a9808a9ea235befbd205a45fe70baf56067 (documentation follow-up commit; tested M2 implementation unchanged)
+- **M2 acceptance:** Accepted on 2026-11-11. Both `backend-v0.2.0` (failed candidate) and `backend-v0.2.1` (passing candidate) were created and independently verified against their exact commit targets.
 - **M0 acceptance:** Accepted on 2026-11-11. The user explicitly chose to proceed without creating the required backend-v0.0.3 Git tag. This is a documented workflow exception, not a claim that the tag exists.
 - **M1 acceptance:** Accepted on 2026-11-11. The required backend-v0.1.0 tag was created and verified. It points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, a documentation follow-up commit whose code tree retains the tested M1 implementation from b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00.
 - **Workflow:** [Development State Machine Workflow](https://github.com/KRMRGold/Meta-Modules/blob/main/workflows/Development-State-Machine-Workflow.md), current canonical version 1.6.1. Project adoption provenance remains 1.6.0 as recorded in Build-spec.md.
 - **Testing module:** Testing and Verification 0.1.2.
 - **Continuity module:** Context Continuity 0.1.2.
 
-## Current candidate — M2 (not yet accepted)
-
-- **Candidate backend version:** 0.2.1
-- **Candidate source commit:** ee757c186acf20d31d3fcc0b5a20292cd80ee530
-- **CI:** [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117) — PASS, 38 tests in 2.42s, Python 3.12.16.
-- **Status:** Candidate; automated M2 acceptance tests pass. Formal acceptance is pending the required Git tags. The connected GitHub write actions available in this session cannot create tag refs, so no M2 tag is claimed.
-- **Failed candidate:** backend 0.2.0 at e1eb64313d312c530b866ddfca8eda59dc9391ce; CI failed during test collection due to literal newline escape sequences in the provider-model route. The repair is version 0.2.1.
 
 ## Implemented behavior
 
@@ -47,7 +42,7 @@
 - Tag: `backend-v0.1.0` points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, the documentation follow-up commit containing the same tested M1 code.
 - Additional user-run verification: Windows 10/11 environment (`win32`), Python 3.12.13, `uv run pytest` — 30 passed in 3.39s. Reported by the user; the exact local checkout SHA was not independently captured in this session.
 
-### M2 — Provider layer and chat streaming (candidate; automated tests pass)
+### M2 — Provider layer and chat streaming (accepted)
 
 - Added the `ModelProvider` protocol and standard-library HTTP streaming helpers.
 - Added Ollama newline-delimited JSON streaming and OpenAI-compatible SSE streaming adapters.
@@ -58,7 +53,9 @@
 - User messages are persisted before generation. The assistant response is persisted exactly once only after successful completion. Provider failures mark the run failed; cancellation marks it cancelled and does not persist partial assistant output.
 - Remote provider requests are rejected unless `allow_remote=true` is explicitly supplied. Remote API keys are accepted through the per-request `X-Provider-API-Key` header and are not written to SQLite or run records.
 - Formal remote transmission policy, scope filtering, and append-only transmission audit remain M3 work.
-- Verification: [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117), candidate ee757c186acf20d31d3fcc0b5a20292cd80ee530, Python 3.12.16, 38 tests passed in 2.42s.
+- Verification: [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117), implementation commit ee757c186acf20d31d3fcc0b5a20292cd80ee530, Python 3.12.16, 38 tests passed in 2.42s.
+- Additional user-run verification: Windows (`win32`), Python 3.12.13, `uv run pytest` — 38 passed in 5.71s, reported by the user on the updated checkout.
+- Tags: `backend-v0.2.0` points to failed candidate e1eb64313d312c530b866ddfca8eda59dc9391ce; `backend-v0.2.1` points to a6dd5a9808a9ea235befbd205a45fe70baf56067, the documentation follow-up commit containing the tested M2 implementation. Both refs were verified on GitHub.
 - Provider configuration is currently environment-based; persistent provider creation via `POST /v1/providers` remains deferred.
 
 ## Architecture and invariants
@@ -74,7 +71,6 @@
 
 ## Known limitations
 
-- The last formally accepted backend remains M1 (0.1.0); M2 code is a tested candidate pending tag creation.
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
 - No remote gate and transmission audit service yet (M3).
 - No memory services, scope enforcement, context compiler, or epistemic API yet (M4–M6).
@@ -116,7 +112,5 @@
 
 ## Current work and next steps
 
-- M2 automated acceptance suite passes on candidate backend 0.2.1; formal acceptance is pending the required `backend-v0.2.0` failed-candidate tag and `backend-v0.2.1` passing-candidate tag.
-- Run the M2 test suite on the user's Windows checkout and record the exact local result.
-- After tag verification, mark M2 accepted and proceed to M3 — remote gate and audit.
+- M2 is accepted. Next milestone: M3 — remote-transmission gate and audit.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
