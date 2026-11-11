@@ -220,12 +220,19 @@ def create_app(
         }
 
     @app.get("/v1/providers/{provider_id}/models", dependencies=[Depends(require_token)])
-    async def get_provider_models(\n        provider_id: str,\n        x_provider_api_key: str | None = Header(default=None, alias="X-Provider-API-Key"),\n    ) -> dict[str, object]:
+    async def get_provider_models(
+        provider_id: str,
+        x_provider_api_key: str | None = Header(default=None, alias="X-Provider-API-Key"),
+    ) -> dict[str, object]:
         provider = app.state.providers.get(provider_id)
         if provider is None:
             raise not_found("Provider not found.")
         try:
-            if provider.is_remote:\n                models = await provider.list_models(api_key=x_provider_api_key)\n            else:\n                models = await provider.list_models()\n            return {"items": models}
+            if provider.is_remote:
+                models = await provider.list_models(api_key=x_provider_api_key)
+            else:
+                models = await provider.list_models()
+            return {"items": models}
         except ProviderError as exc:
             raise HTTPException(
                 status_code=502,
