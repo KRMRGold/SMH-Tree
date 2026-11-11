@@ -1,21 +1,24 @@
 # Test Record
 
-## Latest candidate run
+## Latest accepted candidate
 
 - **Candidate:** backend 0.1.0 (M1 — Conversations and branching)
-- **Candidate commit:** b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00
+- **Implementation commit:** b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00
+- **Accepted tag:** `backend-v0.1.0`
+- **Tag target:** 263c07c1568060a6cd44d1fb144cf06d5fb9601d (documentation follow-up commit; tested M1 code unchanged)
 - **Run date:** 2026-11-11
-- **Environment:** GitHub Actions, Ubuntu 26.04, Python 3.12.16, pytest 9.2.0.
+- **CI environment:** GitHub Actions, Ubuntu 26.04, Python 3.12.16, pytest 9.2.0.
 - **Workflow run:** [Backend CI #7](https://github.com/KRMRGold/SMH-Tree/actions/runs/43107739858)
-- **Command:** uv sync --dev; uv run pytest
-- **Result:** PASS — 30 passed in 1.07s.
-- **Candidate status:** Tests pass; M1 acceptance is pending the required backend-v0.1.0 Git tag or an explicit user-approved exception.
+- **CI command:** uv sync --dev; uv run pytest
+- **CI result:** PASS — 30 passed in 1.07s.
+- **Additional local run:** User-reported Windows `win32`, Python 3.12.13; `uv run pytest`; PASS — 30 passed in 3.39s. The exact local checkout SHA was not captured, so this is recorded as user-reported verification rather than independently commit-attributed evidence.
+- **Candidate status:** ACCEPTED — M1 acceptance criteria passed and required tag created.
 
 ## M1 acceptance checks
 
 | Check | Result | Evidence |
 |---|---|---|
-| Existing M0 regression suite | PASS | All 15 M0 tests remain green in the 30-test run |
+| Existing M0 regression suite | PASS | All 15 M0 tests remain green in the 30-test CI run |
 | UUIDv7 generation | PASS | 100 generated IDs parse as UUIDv7 and are unique |
 | Linear history | PASS | Messages resolve in per-branch sequence order |
 | Fork cutoff | PASS | Child inherits only through its fork message |
@@ -30,6 +33,7 @@
 | Missing project | PASS | Conversation creation rejected; no orphan conversation created |
 | API project/conversation/branch/message flow | PASS | FastAPI TestClient integration flow succeeds |
 | API auth on new routes | PASS | Missing bearer token returns 401 |
+| Candidate tag | PASS | `backend-v0.1.0` exists and points to the documentation follow-up commit 263c07c1568060a6cd44d1fb144cf06d5fb9601d |
 
 ## Source inspection
 
@@ -38,20 +42,13 @@
 - Message sequence allocation uses one INSERT...SELECT statement, with the database unique constraint as the final invariant.
 - No schema migration or new third-party dependency was needed.
 
-## Acceptance status and remaining workflow item
-
-- **M1 functional acceptance tests:** PASS.
-- **Python 3.12 CI:** PASS for the exact candidate commit.
-- **Candidate Git tag:** BLOCKED — the connected GitHub integration does not expose tag creation. Create backend-v0.1.0 pointing to b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00, or explicitly accept proceeding without the tag.
-- **M1 overall:** Candidate, not formally accepted yet.
-
 ## M0 accepted baseline
 
 - **Backend:** 0.0.3
 - **Source commit:** 7795b2f2fe68594d713cfe30088d555c03673899
 - **CI:** [Backend CI #4](https://github.com/KRMRGold/SMH-Tree/actions/runs/43106530591)
 - **Result:** PASS — 15 tests on Python 3.12.16.
-- **Tag exception:** User explicitly accepted proceeding without backend-v0.0.3. This exception applies to M0 only; M1 still requires its tag unless separately waived.
+- **Tag exception:** User explicitly accepted proceeding without backend-v0.0.3. This exception applies to M0 only.
 
 ## Earlier M0 candidate history
 
@@ -65,5 +62,5 @@ Failed and superseded candidates remain in Git history; their version identities
 
 ## Not run
 
-- Windows-specific runtime checks are deferred; the desktop shell and Windows packaging are later milestones.
+- Windows-specific runtime checks were deferred for M1; user-run Windows test suite now passes, but clean-machine packaging remains M9.
 - Ollama, remote-provider, chat-streaming, desktop, and end-to-end checks are not M1 scope.
