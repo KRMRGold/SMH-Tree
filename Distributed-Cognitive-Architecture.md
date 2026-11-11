@@ -1,5 +1,5 @@
 # Distributed Cognitive Architecture
-**Design Document — v0.3**
+**Design Document — v0.4**
 
 ## 1. Vision
 
@@ -543,7 +543,174 @@ The following require further investigation before implementation decisions are 
 - What should remain local versus use external services?
 - How should component versions and schema migrations be managed?
 
-## 16. Overall Direction
+
+## 16. Desktop Application and Technology Stack
+
+The initial user-facing implementation will be a **Windows-first desktop application** with hybrid local and online operation.
+
+The desktop application should remain useful without an internet connection. Local application data and locally available capabilities should continue working offline, while remote model providers and external research services add optional capabilities when connectivity is available.
+
+Local storage is the default source of truth. Remote AI access must not imply automatic cloud synchronization or permission to transmit all stored information.
+
+### 16.1 Desktop Shell
+
+**Electron**
+
+Responsibilities:
+
+- Provide the Windows desktop application and native application lifecycle.
+- Launch, supervise, and stop the local cognitive backend.
+- Manage application-level permissions and the restricted bridge to the renderer.
+- Package the application for Windows distribution.
+
+**Frontend:** HTML, CSS, and vanilla JavaScript using native ES modules. Vite may be used for frontend development and builds. Electron Forge is the initial packaging candidate.
+
+The renderer should not have unrestricted access to Node.js or local system resources. Use a restricted preload API, context isolation, renderer sandboxing, and disabled Node integration. Expose only the specific operations the interface needs.
+
+### 16.2 Cognitive Backend
+
+**Python** is the initial backend language because the selected knowledge-processing and agent-orchestration ecosystem is strongly Python-oriented.
+
+Candidate components:
+
+- **FastAPI:** local application API.
+- **Pydantic:** request, response, and shared-contract validation.
+- **LangGraph:** stateful agent workflows, delegation, and execution checkpoints.
+- **uv:** Python dependency and environment management.
+
+Start with one local Python backend process divided into clearly separated modules. Do not begin with multiple independently deployed microservices. Separate services can be introduced later if scaling, isolation, or deployment requirements justify them.
+
+### 16.3 Storage Strategy
+
+**SQLite is the initial canonical application database.**
+
+Use it for conversations, messages, branches, task and execution metadata, settings, project metadata, epistemic records, and references to source material. SQLite FTS5 is a candidate for local full-text search.
+
+Keep large source documents and attachments in the filesystem where practical, with their metadata, identifiers, and provenance references stored in SQLite.
+
+A dedicated graph database is **not** a prerequisite for the first desktop prototype. The initial data model should represent entities and relationships in a way that can later be migrated or synchronized with a specialized graph backend.
+
+Candidate knowledge components:
+
+- **Cognee:** prototype ingestion, extraction, enrichment, and retrieval. Evaluate its storage-backend options, persistence model, and compatibility with the architecture's canonical identifiers before adopting it.
+- **Graphiti:** retain as a candidate temporal knowledge subsystem. Its graph backend and Windows deployment requirements must be evaluated before making it a required dependency.
+- **Dedicated graph database:** defer selection until a concrete prototype demonstrates which graph capabilities cannot be handled adequately by the initial storage layer.
+
+Do not assume that Cognee and Graphiti should both be adopted. Establish which responsibilities complement each other and avoid duplicated ownership or implicit bidirectional synchronization.
+
+### 16.4 Model Provider Layer
+
+Use a provider-adapter interface so models and runtimes can be changed without redesigning the knowledge and conversation infrastructure.
+
+Initial candidates:
+
+- **Ollama:** local model runtime.
+- **Remote model APIs:** optional online providers.
+- **Embedding models:** independently configurable from conversational models.
+
+Different tasks may use different models, including conversation, extraction, research, verification, embeddings, and lightweight background processing.
+
+Each task should declare whether remote processing is allowed. Local information must not be sent to a remote provider merely because that provider is configured.
+
+### 16.5 Desktop-to-Backend Communication
+
+The Electron application and Python backend should communicate through a versioned local API.
+
+Initial approach:
+
+- HTTP with JSON for ordinary requests and responses.
+- Server-Sent Events (SSE) for streamed model and agent output.
+- WebSockets only if later requirements need bidirectional real-time communication.
+- OpenAPI documentation and versioned schemas for the API contract.
+
+The local backend should bind to loopback (127.0.0.1) by default, use a per-launch authentication token, and not expose its API to the local network unless an explicit future configuration enables that behavior.
+
+Electron's main process should manage the backend process lifecycle. The renderer should communicate through the restricted preload bridge rather than directly accessing local databases, credentials, or arbitrary backend capabilities.
+
+### 16.6 Windows Packaging and Data Locations
+
+Candidate packaging approach:
+
+- **Electron Forge** for the desktop application.
+- **PyInstaller** to package the Python backend as a sidecar executable.
+- Separate Windows builds and installers.
+- User data stored outside the application installation directory.
+- Model downloads and model storage managed independently from application updates.
+
+Packaging the Python environment and its dependencies must be tested early. Native dependencies and the size of the knowledge-processing stack may complicate distribution. Do not bundle large AI models into the application installer.
+
+### 16.7 Testing and Development Tooling
+
+Initial candidates:
+
+- **pytest:** Python backend tests.
+- **Node.js built-in test runner:** frontend and application-side unit tests.
+- **Playwright:** desktop UI and end-to-end testing, subject to validating the chosen Electron integration.
+- **Git:** source history and development provenance.
+
+The Python backend should be testable independently of Electron. This preserves the possibility of adding a web interface or other clients later.
+
+### 16.8 Operating Modes
+
+The application should distinguish local capabilities from online capabilities.
+
+**Available offline, subject to local components being installed:**
+
+- Open, create, and search local conversations.
+- Read and update local memory and knowledge records.
+- Navigate conversation branches.
+- Run locally installed models.
+- Execute workflows that do not require external services.
+
+**Available when online:**
+
+- Use configured remote model providers.
+- Perform external research and retrieve online sources.
+- Access future synchronization services if explicitly configured.
+
+Cloud synchronization is a separate architectural decision. Hybrid AI access does not itself require account-based cloud storage or automatic synchronization.
+
+### 16.9 Initial Architecture
+
+The first Windows implementation follows this structure:
+
+```text
+Windows Desktop Application
+└── Electron
+    ├── Renderer: HTML / CSS / JavaScript
+    ├── Preload: restricted application bridge
+    └── Main Process
+        └── Local Python Backend
+            ├── FastAPI and Pydantic
+            ├── LangGraph execution
+            ├── Knowledge integration adapters
+            │   ├── Cognee prototype
+            │   └── Graphiti evaluation
+            ├── SQLite canonical application data
+            └── Model provider adapters
+                ├── Ollama (local)
+                └── Remote model APIs (optional)
+```
+
+This is a proposed initial stack, not a commitment to keep every candidate. Components should be adopted only after their integration, persistence, security, and packaging behavior have been tested.
+
+### 16.10 Deferred Decisions and Risks
+
+The following remain open:
+
+- Which graph database, if any, should become the production desktop backend?
+- Whether Cognee's capabilities and persistence model fit the canonical data contract.
+- Whether Graphiti is worth the additional graph-backend deployment requirement.
+- How Python dependencies and native components will be packaged and updated on Windows.
+- How local model installation, selection, and resource requirements should be presented.
+- Whether and how cloud synchronization should work.
+- Which remote providers should be supported initially.
+- How local data permissions and remote-transmission policies should be exposed to users.
+
+The first technical prototype should validate the Electron-to-Python process lifecycle, local API security, SQLite persistence, one local model request, and one optional remote model request. Knowledge-framework integration and packaging should be tested as separate risks before they become foundational dependencies.
+
+
+## 17. Overall Direction
 
 The intended result is a modular cognitive platform built from interconnected knowledge, memory, conversation, and execution systems.
 
