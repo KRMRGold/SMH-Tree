@@ -14,14 +14,13 @@ from cogplat.providers.base import ModelProvider
 from cogplat.repos import conversations as conversation_repo
 from cogplat.repos import runs as run_repo
 from cogplat.services import conversations as conversation_service
+from cogplat.services import remote_gate
+
+RemoteNotAllowed = remote_gate.RemoteNotAllowed
 
 
 class ResourceNotFound(Exception):
     """The requested branch or run does not exist."""
-
-
-class RemoteNotAllowed(Exception):
-    """Remote transmission was not explicitly allowed for this chat turn."""
 
 
 def prepare_chat(
@@ -40,6 +39,7 @@ def prepare_chat(
         user_message = conversation_repo.insert_message(
             connection, branch_id, "user", "user", content, None
         )
+        history = conversation_service.resolve_history(connection, branch_id)
         run = run_repo.create_run(
             connection,
             "chat_turn",
@@ -50,11 +50,11 @@ def prepare_chat(
                 "provider": provider_id,
                 "model": model,
                 "user_message_id": str(user_message["id"]),
+                "message_refs": [str(item["id"]) for item in history],
             },
         )
         step = run_repo.create_step(connection, str(run["id"]), "provider_stream")
 
-    history = conversation_service.resolve_history(connection, branch_id)
     messages = [ChatMessage(role=str(item["role"]), content=str(item["content"])) for item in history]
     return run, step, messages
 
@@ -76,6 +76,8 @@ async def stream_chat_events(
         options: dict[str, object] = {}
         if api_key:
             options["api_key"] = api_key
+        run_input = run.get("input_json") or {}
+        remote_gate.authorize_and_audit(connection, run, provider, messages, run_input.get("message_refs", []))
         async for token in provider.stream_chat(model, messages, **options):
             if not isinstance(token, str):
                 raise TypeError("Provider yielded a non-text token.")

@@ -28,8 +28,8 @@ def test_health_requires_a_valid_bearer_token(tmp_path):
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
-        "version": "0.2.1",
-        "schema_version": 1,
+        "version": "0.3.0",
+        "schema_version": 2,
         "capabilities": {
             "sqlite": True,
             "sqlite_fts5": True,
@@ -55,3 +55,11 @@ def test_default_fastapi_docs_are_disabled(tmp_path):
     client = make_client(tmp_path)
     assert client.get("/docs").status_code == 404
     assert client.get("/openapi.json").status_code == 404
+
+
+def test_transmissions_endpoint_requires_authentication(tmp_path):
+    client = make_client(tmp_path)
+    assert client.get("/v1/transmissions").status_code == 401
+    response = client.get("/v1/transmissions", headers={"Authorization": "Bearer test-token"})
+    assert response.status_code == 200
+    assert response.json() == {"items": []}

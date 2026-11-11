@@ -29,3 +29,12 @@ This is the project's living decision log. Add concise entries when an implement
 - **M2 remote opt-in boundary:** Reject remote chat requests unless `allow_remote=true`. The complete deterministic remote gate, memory-scope filtering, and transmission audit are intentionally M3 work.
 - **Run persistence:** Reuse the existing `runs` and `run_steps` tables from migration 0001; M2 requires no schema migration.
 - **Provider configuration scope:** M2 exposes provider listing and model discovery for environment-configured providers. Persistent provider creation via `POST /v1/providers` is deferred rather than adding a partial configuration store.
+
+
+## M3 decisions
+
+- **Audit byte count:** UTF-8 byte length of compact JSON role/content messages at the provider-adapter boundary; excludes HTTP headers and provider/model envelope fields.
+- **Audit ordering:** Commit the transmission ledger row before invoking the provider stream. Failed provider calls remain auditable because a request may already have reached the provider.
+- **Append-only enforcement:** SQLite triggers reject updates and deletes from `remote_transmissions`; M3 adds migration 0002 rather than recreating the M0 table.
+- **Memory scope timing:** Global/user filtering is a deterministic helper with opt-in settings defaulting false. M5 must call it when the context compiler begins adding memory to chat packets; M3 has no memory context compiler to wire yet.
+- **Audit API:** Add authenticated `GET /v1/transmissions`; pagination and UI presentation are deferred.

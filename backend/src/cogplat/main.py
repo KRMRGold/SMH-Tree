@@ -24,6 +24,7 @@ from cogplat.domain.conversation import (
 from cogplat.providers.base import ModelProvider, ProviderError
 from cogplat.providers.registry import build_registry
 from cogplat.repos import runs as run_repo
+from cogplat.repos import transmissions as transmission_repo
 from cogplat.services import chat as chat_service
 from cogplat.services import conversations as conversation_service
 
@@ -289,6 +290,10 @@ def create_app(
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
+
+    @app.get("/v1/transmissions", dependencies=[Depends(require_token)])
+    def get_transmissions(connection=Depends(open_database)) -> dict[str, object]:
+        return {"items": transmission_repo.list_transmissions(connection)}
 
     @app.get("/v1/runs/{run_id}", dependencies=[Depends(require_token)])
     def get_run(run_id: str, connection=Depends(open_database)) -> dict[str, object]:

@@ -14,6 +14,13 @@
 - **Continuity module:** Context Continuity 0.1.2.
 
 
+## Current candidate — M3 (not yet accepted)
+
+- **Candidate backend version:** 0.3.0
+- **Scope:** deterministic remote-transmission gate, global/user memory filtering policy, and append-only transmission audit.
+- **Status:** Implementation candidate; automated CI, Windows verification, and candidate tags are pending.
+- **Schema:** Migration 0002 adds database-enforced update/delete rejection for the existing `remote_transmissions` ledger.
+
 ## Implemented behavior
 
 ### M0 — Skeleton (accepted)
@@ -52,7 +59,7 @@
 - Chat runs and ordered run steps are persisted in the existing M0 schema; no migration was required.
 - User messages are persisted before generation. The assistant response is persisted exactly once only after successful completion. Provider failures mark the run failed; cancellation marks it cancelled and does not persist partial assistant output.
 - Remote provider requests are rejected unless `allow_remote=true` is explicitly supplied. Remote API keys are accepted through the per-request `X-Provider-API-Key` header and are not written to SQLite or run records.
-- Formal remote transmission policy, scope filtering, and append-only transmission audit remain M3 work.
+- M3 adds an in-service remote gate, a committed pre-request transmission record, an authenticated audit-list endpoint, and database-enforced append-only triggers. Global/user memory filtering is a deterministic permission helper; memory is not added to chat packets until M5.
 - Verification: [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117), implementation commit ee757c186acf20d31d3fcc0b5a20292cd80ee530, Python 3.12.16, 38 tests passed in 2.42s.
 - Additional user-run verification: Windows (`win32`), Python 3.12.13, `uv run pytest` — 38 passed in 5.71s, reported by the user on the updated checkout.
 - Tags: `backend-v0.2.0` points to failed candidate e1eb64313d312c530b866ddfca8eda59dc9391ce; `backend-v0.2.1` points to a6dd5a9808a9ea235befbd205a45fe70baf56067, the documentation follow-up commit containing the tested M2 implementation. Both refs were verified on GitHub.
@@ -72,7 +79,6 @@
 ## Known limitations
 
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
-- No remote gate and transmission audit service yet (M3).
 - No memory services, scope enforcement, context compiler, or epistemic API yet (M4–M6).
 - No desktop shell or packaging yet (M8–M9).
 - M0's candidate tag was intentionally omitted with user acceptance.
@@ -112,5 +118,5 @@
 
 ## Current work and next steps
 
-- M2 is accepted. Next milestone: M3 — remote-transmission gate and audit.
+- M3 candidate 0.3.0 is implemented; run CI and Windows tests, then tag the candidate before acceptance.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.

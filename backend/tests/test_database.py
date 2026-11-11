@@ -39,7 +39,7 @@ def open_migrated_db(path):
 def test_migration_applies_once_and_is_idempotent(tmp_path):
     connection = connect_db(tmp_path / "app.db")
     try:
-        assert apply_migrations(connection) == 1
+        assert apply_migrations(connection) == 2
         first = connection.execute(
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
@@ -49,7 +49,7 @@ def test_migration_applies_once_and_is_idempotent(tmp_path):
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
 
-        assert len(first) == 1
+        assert len(first) == 2
         assert [tuple(row) for row in second] == [tuple(row) for row in first]
     finally:
         connection.close()
@@ -124,5 +124,21 @@ def test_fts_tables_track_messages_and_memory(tmp_path):
         ).fetchall()
         assert len(message_hits) == 1
         assert len(memory_hits) == 1
+    finally:
+        connection.close()
+
+
+def test_remote_transmission_audit_is_append_only(tmp_path):
+    connection = open_migrated_db(tmp_path / "audit.db")
+    try:
+        connection.execute("INSERT INTO projects(id, name, created_at) VALUES ('p1', 'Project', '2026-01-01T00:00:00Z')")
+        connection.execute("INSERT INTO conversations(id, project_id, title, created_at) VALUES ('c1', 'p1', 'Conversation', '2026-01-01T00:00:00Z')")
+        connection.execute("INSERT INTO branches(id, conversation_id, name, created_at) VALUES ('b1', 'c1', 'Root', '2026-01-01T00:00:00Z')")
+        connection.execute("INSERT INTO runs(id, kind, conversation_id, branch_id, status, created_at) VALUES ('r1', 'chat_turn', 'c1', 'b1', 'succeeded', '2026-01-01T00:00:00Z')")
+        connection.execute("INSERT INTO remote_transmissions(id, run_id, provider_label, item_refs_json, byte_count, created_at) VALUES ('t1', 'r1', 'Remote', '[]', 2, '2026-01-01T00:00:00Z')")
+        with pytest.raises(sqlite3.IntegrityError, match="append-only"):
+            connection.execute("UPDATE remote_transmissions SET byte_count = 3 WHERE id = 't1'")
+        with pytest.raises(sqlite3.IntegrityError, match="append-only"):
+            connection.execute("DELETE FROM remote_transmissions WHERE id = 't1'")
     finally:
         connection.close()

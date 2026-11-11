@@ -1,5 +1,16 @@
 # Test Record
 
+## Current candidate — M3 (not yet accepted)
+
+- **Candidate:** backend 0.3.0 (M3 — Remote gate and audit)
+- **Candidate commit:** pending CI commit
+- **Run date:** 2026-11-11
+- **Automated CI:** pending.
+- **Windows verification:** pending user-run `uv run pytest`.
+- **Candidate tags:** pending. Do not treat this candidate as accepted until the candidate tag is created and verified.
+- **Coverage added:** denied remote calls do not invoke the provider or create an audit row; allowed remote calls have a committed audit row before provider invocation; local calls are not audited; global/user memory is stripped unless the matching setting is enabled; audit update/delete operations are rejected; authenticated audit listing is covered.
+
+
 ## Latest accepted run — M2
 
 - **Accepted version:** backend 0.2.1 (M2 — Provider layer and chat streaming)

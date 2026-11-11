@@ -83,6 +83,7 @@ def test_chat_streams_tokens_and_persists_one_assistant_message(tmp_path):
     run = client.get(f"/v1/runs/{run_id}", headers=auth()).json()
     assert run["status"] == "succeeded"
     assert run["steps"][0]["status"] == "succeeded"
+    assert client.get("/v1/transmissions", headers=auth()).json() == {"items": []}
 
 
 def test_provider_error_emits_error_event_and_fails_run(tmp_path):
@@ -166,3 +167,58 @@ def test_provider_listing_and_model_discovery(tmp_path):
     client = make_client(tmp_path, FakeProvider())
     assert client.get("/v1/providers", headers=auth()).json()["items"][0]["id"] == "fake"
     assert client.get("/v1/providers/fake/models", headers=auth()).json()["items"] == ["fake-model"]
+
+
+class AuditCheckingProvider(FakeProvider):
+    is_remote = True
+    def __init__(self, database_path):
+        super().__init__(tokens=["remote reply"])
+        self.database_path = database_path
+        self.audit_visible_before_call = False
+    async def stream_chat(self, model, messages, **opts):
+        connection = connect_db(self.database_path)
+        try:
+            count = connection.execute("SELECT COUNT(*) FROM remote_transmissions").fetchone()[0]
+            self.audit_visible_before_call = int(count) == 1
+        finally:
+            connection.close()
+        self.called = True
+        yield "remote reply"
+
+def test_remote_allowed_is_audited_before_provider_call(tmp_path):
+    provider = AuditCheckingProvider(tmp_path / "app.db")
+    client = make_client(tmp_path, provider)
+    branch_id = client.post("/v1/conversations", json={"title": "Remote"}, headers=auth()).json()["root_branch_id"]
+    response = client.post(
+        f"/v1/branches/{branch_id}/chat",
+        json={"content": "Explicitly share this message", "provider": "fake", "model": "fake-model", "allow_remote": True},
+        headers=auth(),
+    )
+    assert response.status_code == 200
+    assert provider.called is True
+    assert provider.audit_visible_before_call is True
+    rows = client.get("/v1/transmissions", headers=auth()).json()["items"]
+    assert len(rows) == 1
+    assert rows[0]["provider_label"] == "Fake"
+    assert len(rows[0]["item_refs"]) == 1
+    assert rows[0]["byte_count"] > 0
+
+def test_remote_gate_rejects_unapproved_run_before_provider_call(tmp_path):
+    connection = connect_db(tmp_path / "gate.db")
+    apply_migrations(connection)
+    try:
+        conversation = conversations.create_conversation(connection, "Gate")
+        branch_id = str(conversation["root_branch_id"])
+        provider = FakeProvider()
+        provider.is_remote = True
+        run, step, messages = chat_service.prepare_chat(connection, branch_id, "Do not send", "fake", "fake-model", False)
+        async def exercise():
+            events = [event async for event in chat_service.stream_chat_events(
+                connection, run, step, branch_id, "fake", provider, "fake-model", messages
+            )]
+            assert events[-1][0] == "error"
+        asyncio.run(exercise())
+        assert provider.called is False
+        assert connection.execute("SELECT COUNT(*) FROM remote_transmissions").fetchone()[0] == 0
+    finally:
+        connection.close()
