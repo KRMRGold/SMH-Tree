@@ -28,13 +28,14 @@ def test_health_requires_a_valid_bearer_token(tmp_path):
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "schema_version": 1,
         "capabilities": {
             "sqlite": True,
             "sqlite_fts5": True,
             "branching": True,
-            "chat": False,
+            "chat": True,
+            "streaming": True,
         },
     }
 

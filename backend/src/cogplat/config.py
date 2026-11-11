@@ -15,6 +15,8 @@ class Settings:
 
     api_token: str
     data_dir: Path
+    ollama_base_url: str = "http://127.0.0.1:11434"
+    openai_compat_base_url: str = "https://api.openai.com/v1"
 
 
 def resolve_data_dir(
@@ -56,6 +58,10 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     return Settings(
         api_token=token,
         data_dir=resolve_data_dir(env),
+        ollama_base_url=env.get("COGPLAT_OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+        openai_compat_base_url=env.get(
+            "COGPLAT_OPENAI_COMPAT_BASE_URL", "https://api.openai.com/v1"
+        ),
     )
 
 

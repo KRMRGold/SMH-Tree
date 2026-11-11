@@ -2,26 +2,36 @@
 
 from __future__ import annotations
 
+import json
 import secrets
+from collections.abc import Mapping
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from cogplat import __version__
 from cogplat.config import Settings, ensure_data_dir, load_settings
 from cogplat.db.connection import apply_migrations, connect_db
+from cogplat.domain.chat import ChatRequest
 from cogplat.domain.conversation import (
     BranchFork,
     ConversationCreate,
     MessageCreate,
     ProjectCreate,
 )
+from cogplat.providers.base import ModelProvider, ProviderError
+from cogplat.providers.registry import build_registry
+from cogplat.repos import runs as run_repo
+from cogplat.services import chat as chat_service
 from cogplat.services import conversations as conversation_service
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    providers: Mapping[str, ModelProvider] | None = None,
+) -> FastAPI:
     """Create the API, prepare its local database, and require bearer auth."""
 
     runtime_settings = settings if settings is not None else load_settings()
@@ -42,6 +52,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
     )
     app.state.database_path = database_path
+    app.state.providers = dict(providers) if providers is not None else build_registry(runtime_settings)
     bearer = HTTPBearer(auto_error=False)
 
     @app.exception_handler(HTTPException)
@@ -96,7 +107,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "sqlite": True,
                 "sqlite_fts5": True,
                 "branching": True,
-                "chat": False,
+                "chat": True,
+                "streaming": True,
             },
         }
 
@@ -119,9 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         project_id: str | None = Query(default=None),
         connection=Depends(open_database),
     ) -> dict[str, object]:
-        return {
-            "items": conversation_service.list_conversations(connection, project_id)
-        }
+        return {"items": conversation_service.list_conversations(connection, project_id)}
 
     @app.post("/v1/conversations", status_code=201, dependencies=[Depends(require_token)])
     def post_conversation(
@@ -142,9 +152,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         conversation_id: str, connection=Depends(open_database)
     ) -> dict[str, object]:
         try:
-            return {
-                "items": conversation_service.list_branches(connection, conversation_id)
-            }
+            return {"items": conversation_service.list_branches(connection, conversation_id)}
         except conversation_service.ResourceNotFound as exc:
             raise not_found(str(exc)) from exc
 
@@ -154,10 +162,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ) -> dict[str, object]:
         try:
             return conversation_service.fork_branch(
-                connection,
-                payload.parent_branch_id,
-                payload.fork_message_id,
-                payload.name,
+                connection, payload.parent_branch_id, payload.fork_message_id, payload.name
             )
         except conversation_service.ResourceNotFound as exc:
             raise not_found(str(exc)) from exc
@@ -175,9 +180,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         branch_id: str, connection=Depends(open_database)
     ) -> dict[str, object]:
         try:
-            return {
-                "items": conversation_service.resolve_history(connection, branch_id)
-            }
+            return {"items": conversation_service.resolve_history(connection, branch_id)}
         except conversation_service.ResourceNotFound as exc:
             raise not_found(str(exc)) from exc
 
@@ -193,19 +196,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ) -> dict[str, object]:
         try:
             return conversation_service.append_message(
-                connection,
-                branch_id,
-                payload.role,
-                payload.participant,
-                payload.content,
-                payload.model_ref,
+                connection, branch_id, payload.role, payload.participant,
+                payload.content, payload.model_ref,
             )
         except conversation_service.ResourceNotFound as exc:
             raise not_found(str(exc)) from exc
         except Exception as exc:
-            # Keep raw SQLite details out of the API response.
             import sqlite3
-
             if isinstance(exc, sqlite3.IntegrityError):
                 raise HTTPException(
                     status_code=409,
@@ -213,12 +210,88 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 ) from exc
             raise
 
+    @app.get("/v1/providers", dependencies=[Depends(require_token)])
+    def get_providers() -> dict[str, object]:
+        return {
+            "items": [
+                {"id": key, "label": provider.label, "is_remote": provider.is_remote}
+                for key, provider in app.state.providers.items()
+            ]
+        }
+
+    @app.get("/v1/providers/{provider_id}/models", dependencies=[Depends(require_token)])
+    async def get_provider_models(\n        provider_id: str,\n        x_provider_api_key: str | None = Header(default=None, alias="X-Provider-API-Key"),\n    ) -> dict[str, object]:
+        provider = app.state.providers.get(provider_id)
+        if provider is None:
+            raise not_found("Provider not found.")
+        try:
+            if provider.is_remote:\n                models = await provider.list_models(api_key=x_provider_api_key)\n            else:\n                models = await provider.list_models()\n            return {"items": models}
+        except ProviderError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail={"code": "provider_error", "message": str(exc)},
+            ) from exc
+
+    @app.post(
+        "/v1/branches/{branch_id}/chat",
+        dependencies=[Depends(require_token)],
+    )
+    async def post_chat(
+        branch_id: str,
+        payload: ChatRequest,
+        request: Request,
+        x_provider_api_key: str | None = Header(default=None, alias="X-Provider-API-Key"),
+    ):
+        provider = app.state.providers.get(payload.provider)
+        if provider is None:
+            raise not_found("Provider not found.")
+        if provider.is_remote and not payload.allow_remote:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "remote_not_allowed",
+                    "message": "Remote transmission is disabled for this chat turn.",
+                },
+            )
+
+        connection = connect_db(app.state.database_path)
+        try:
+            run, step, messages = chat_service.prepare_chat(
+                connection, branch_id, payload.content, payload.provider,
+                payload.model, payload.allow_remote,
+            )
+        except chat_service.ResourceNotFound as exc:
+            connection.close()
+            raise not_found(str(exc)) from exc
+        except Exception:
+            connection.close()
+            raise
+
+        async def event_stream():
+            try:
+                async for event, data in chat_service.stream_chat_events(
+                    connection, run, step, branch_id, payload.provider, provider,
+                    payload.model, messages, api_key=x_provider_api_key,
+                ):
+                    yield f"event: {event}\ndata: {json.dumps(data, separators=(',', ':'))}\n\n"
+            finally:
+                connection.close()
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
+    @app.get("/v1/runs/{run_id}", dependencies=[Depends(require_token)])
+    def get_run(run_id: str, connection=Depends(open_database)) -> dict[str, object]:
+        run = run_repo.get_run(connection, run_id)
+        if run is None:
+            raise not_found("Run not found.")
+        return run
+
     @app.get("/v1/openapi.json", dependencies=[Depends(require_token)])
     def openapi_schema() -> dict[str, object]:
-        return get_openapi(
-            title=app.title,
-            version=app.version,
-            routes=app.routes,
-        )
+        return get_openapi(title=app.title, version=app.version, routes=app.routes)
 
     return app
