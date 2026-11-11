@@ -1,5 +1,39 @@
 # Test Record
 
+## Latest candidate run
+
+- **Candidate:** backend 0.2.1 (M2 — Provider layer and chat streaming)
+- **Candidate commit:** ee757c186acf20d31d3fcc0b5a20292cd80ee530
+- **Run date:** 2026-11-11
+- **CI environment:** GitHub Actions, Ubuntu 26.04, Python 3.12.16, pytest 9.2.0.
+- **Workflow run:** [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117)
+- **Command:** `uv sync --dev`; `uv run pytest`
+- **Result:** PASS — 38 passed in 2.42s.
+- **Candidate status:** Tests pass; formal acceptance is pending required Git tags. Tag creation is unavailable through the connected GitHub write actions used in this session. No tag is claimed to exist.
+
+## M2 acceptance checks
+
+| Check | Result | Evidence |
+|---|---|---|
+| Existing M0/M1 regression suite | PASS | All 30 previous tests pass in the 38-test run |
+| Provider protocol and registry | PASS | Provider listing and model discovery tests |
+| Ollama adapter | PASS | Mock HTTP server; model listing and ordered NDJSON token stream |
+| OpenAI-compatible adapter | PASS | Mock HTTP server; ordered SSE token stream |
+| Token streaming order | PASS | Fake-provider SSE integration test |
+| Assistant message persisted once on completion | PASS | Branch history contains exactly one completed assistant message |
+| Provider error event and failed run | PASS | SSE error event; run and step status are failed |
+| Cancellation marks run cancelled | PASS | Async cancellation test; no partial assistant message persisted |
+| Remote provider blocked without explicit opt-in | PASS | Request rejected before provider invocation |
+| Candidate version and CI result | PASS | backend 0.2.1, exact commit and CI run above |
+
+## M2 source inspection
+
+- Existing `runs` and `run_steps` tables from migration 0001 were reused; no migration or runtime dependency was added.
+- Provider API keys are passed per request in `X-Provider-API-Key`; they are not included in run input/output records.
+- Remote transmission remains opt-in at the chat request boundary. Formal policy enforcement, memory scope filtering, and transmission audit are M3.
+- Provider endpoints are configured through environment variables. Persistent provider configuration via `POST /v1/providers` remains deferred.
+
+
 ## Latest accepted candidate
 
 - **Candidate:** backend 0.1.0 (M1 — Conversations and branching)
@@ -62,5 +96,7 @@ Failed and superseded candidates remain in Git history; their version identities
 
 ## Not run
 
-- Windows-specific runtime checks were deferred for M1; user-run Windows test suite now passes, but clean-machine packaging remains M9.
-- Ollama, remote-provider, chat-streaming, desktop, and end-to-end checks are not M1 scope.
+- M2 test suite on the user's Windows checkout; the M1 Windows run passed, but M2 Windows verification is still pending.
+- Live Ollama runtime with an installed model; the adapter was tested against a local mocked HTTP server.
+- Live OpenAI-compatible remote provider; the adapter was tested against a mocked HTTP server and no real API key or user data was transmitted.
+- Desktop and end-to-end flows remain M8–M9 work.

@@ -11,6 +11,14 @@
 - **Testing module:** Testing and Verification 0.1.2.
 - **Continuity module:** Context Continuity 0.1.2.
 
+## Current candidate — M2 (not yet accepted)
+
+- **Candidate backend version:** 0.2.1
+- **Candidate source commit:** ee757c186acf20d31d3fcc0b5a20292cd80ee530
+- **CI:** [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117) — PASS, 38 tests in 2.42s, Python 3.12.16.
+- **Status:** Candidate; automated M2 acceptance tests pass. Formal acceptance is pending the required Git tags. The connected GitHub write actions available in this session cannot create tag refs, so no M2 tag is claimed.
+- **Failed candidate:** backend 0.2.0 at e1eb64313d312c530b866ddfca8eda59dc9391ce; CI failed during test collection due to literal newline escape sequences in the provider-model route. The repair is version 0.2.1.
+
 ## Implemented behavior
 
 ### M0 — Skeleton (accepted)
@@ -39,6 +47,20 @@
 - Tag: `backend-v0.1.0` points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, the documentation follow-up commit containing the same tested M1 code.
 - Additional user-run verification: Windows 10/11 environment (`win32`), Python 3.12.13, `uv run pytest` — 30 passed in 3.39s. Reported by the user; the exact local checkout SHA was not independently captured in this session.
 
+### M2 — Provider layer and chat streaming (candidate; automated tests pass)
+
+- Added the `ModelProvider` protocol and standard-library HTTP streaming helpers.
+- Added Ollama newline-delimited JSON streaming and OpenAI-compatible SSE streaming adapters.
+- Added environment-configurable provider base URLs: `COGPLAT_OLLAMA_BASE_URL` and `COGPLAT_OPENAI_COMPAT_BASE_URL`.
+- Added authenticated provider listing and model discovery endpoints.
+- Added authenticated `POST /v1/branches/{branch_id}/chat` SSE endpoint with ordered token events, completion event, and provider-error event.
+- Chat runs and ordered run steps are persisted in the existing M0 schema; no migration was required.
+- User messages are persisted before generation. The assistant response is persisted exactly once only after successful completion. Provider failures mark the run failed; cancellation marks it cancelled and does not persist partial assistant output.
+- Remote provider requests are rejected unless `allow_remote=true` is explicitly supplied. Remote API keys are accepted through the per-request `X-Provider-API-Key` header and are not written to SQLite or run records.
+- Formal remote transmission policy, scope filtering, and append-only transmission audit remain M3 work.
+- Verification: [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117), candidate ee757c186acf20d31d3fcc0b5a20292cd80ee530, Python 3.12.16, 38 tests passed in 2.42s.
+- Provider configuration is currently environment-based; persistent provider creation via `POST /v1/providers` remains deferred.
+
 ## Architecture and invariants
 
 - SQLite is the canonical store; no ORM.
@@ -52,7 +74,8 @@
 
 ## Known limitations
 
-- No chat provider or streaming chat yet (M2).
+- The last formally accepted backend remains M1 (0.1.0); M2 code is a tested candidate pending tag creation.
+- The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
 - No remote gate and transmission audit service yet (M3).
 - No memory services, scope enforcement, context compiler, or epistemic API yet (M4–M6).
 - No desktop shell or packaging yet (M8–M9).
@@ -77,6 +100,13 @@
 | Per-branch sequence uniqueness | pytest service test |
 | Project/conversation creation and scoping | pytest service and API integration tests |
 | Authenticated branch/message API | pytest API integration tests |
+| Provider protocol, provider listing, and model discovery | pytest chat API tests |
+| Ollama NDJSON stream parsing | pytest mocked HTTP server test |
+| OpenAI-compatible SSE stream parsing | pytest mocked HTTP server test |
+| Chat token ordering and single assistant persistence | pytest SSE integration test |
+| Provider failure event and failed run | pytest SSE integration test |
+| Cancellation and partial-output suppression | pytest async service test |
+| Remote provider denied without explicit opt-in | pytest chat API test |
 
 ## Failed candidates
 
@@ -86,6 +116,7 @@
 
 ## Current work and next steps
 
-- **Next milestone:** M2 — provider layer and chat streaming.
-- Implement the `ModelProvider` protocol, Ollama and OpenAI-compatible adapters, authenticated SSE chat endpoint, run/run-step persistence, and fake-provider tests as defined in Build-spec.md.
+- M2 automated acceptance suite passes on candidate backend 0.2.1; formal acceptance is pending the required `backend-v0.2.0` failed-candidate tag and `backend-v0.2.1` passing-candidate tag.
+- Run the M2 test suite on the user's Windows checkout and record the exact local result.
+- After tag verification, mark M2 accepted and proceed to M3 — remote gate and audit.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
