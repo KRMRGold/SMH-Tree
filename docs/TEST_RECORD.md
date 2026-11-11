@@ -2,11 +2,11 @@
 
 ## Current candidate — M4 (not yet accepted)
 
-- **Candidate:** backend 0.4.0 (M4 — Memory).
-- **Implementation commit:** 5007e6dd33393d1fc7786a001da7901e12e86444; tests and final documentation follow-up are being added.
+- **Failed candidate:** backend 0.4.0, commit 41ae1363fd2ceb79fa9e117b1d237d4db526dc84; CI run #43116076972: 53 passed, 1 failed. The failing API test created ancestor memory after the fork and incorrectly expected it to be inherited.
+- **Repair candidate:** backend 0.4.1. Corrected the test setup and added a fork-of-fork test proving each ancestor receives its own fork-time cutoff.
 - **Schema:** migration 0003 adds database-enforced memory scope and supersession invariants.
 - **Coverage added:** scoped CRUD, FTS5 search, branch ancestry fork-time cutoffs, sibling exclusion, remote global/user sharing, lifecycle transitions, and API authorization.
-- **Acceptance status:** CANDIDATE — do not accept until CI, Windows verification, and backend-v0.4.0 tag verification pass.
+- **Acceptance status:** CANDIDATE — do not accept until CI, Windows verification, and backend-v0.4.0 / backend-v0.4.1 tag targets are verified.
 
 
 ## Latest accepted run — M3

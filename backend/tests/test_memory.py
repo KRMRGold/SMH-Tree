@@ -140,3 +140,28 @@ def test_database_rejects_invalid_scope_shape_and_supersession(tmp_path):
             )
     finally:
         connection.close()
+
+
+def test_fork_of_fork_applies_each_ancestor_cutoff_independently(tmp_path):
+    connection = make_db(tmp_path / "deep-scopes.db")
+    try:
+        insert_scope_graph(connection)
+        connection.execute(
+            "INSERT INTO messages(id, branch_id, seq, role, participant, content, created_at) "
+            "VALUES ('child-fork-msg', 'child', 1, 'user', 'user', 'second fork', '2026-01-01T00:00:05Z')"
+        )
+        connection.execute(
+            "INSERT INTO branches(id, conversation_id, parent_branch_id, fork_message_id, name, created_at) "
+            "VALUES ('grandchild', 'c1', 'child', 'child-fork-msg', 'Grandchild', '2026-01-01T00:00:06Z')"
+        )
+        insert_memory(connection, "root-visible", "branch", "root", "2026-01-01T00:00:01Z")
+        insert_memory(connection, "root-excluded", "branch", "root", "2026-01-01T00:00:03Z")
+        insert_memory(connection, "child-visible", "branch", "child", "2026-01-01T00:00:04Z")
+        insert_memory(connection, "child-at-cutoff", "branch", "child", "2026-01-01T00:00:05Z")
+        insert_memory(connection, "child-excluded", "branch", "child", "2026-01-01T00:00:06Z")
+        insert_memory(connection, "grandchild-own", "branch", "grandchild", "2026-01-01T00:00:07Z")
+        context = build_access_context(connection, branch_id="grandchild")
+        found = {item["id"] for item in memory_service.list_memory(connection, context)}
+        assert found == {"root-visible", "child-visible", "child-at-cutoff", "grandchild-own"}
+    finally:
+        connection.close()

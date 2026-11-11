@@ -58,6 +58,10 @@ def test_memory_item_detail_obeys_branch_scope_eligibility(tmp_path):
         "/v1/conversations", headers=auth(), json={"title": "Conversation", "project_id": project["id"]}
     ).json()
     root = conversation["root_branch_id"]
+    root_memory = client.post(
+        "/v1/memory", headers=auth(),
+        json={"scope": "branch", "scope_id": root, "kind": "fact", "content": "Root memory"},
+    ).json()
     message = client.post(
         f"/v1/branches/{root}/messages", headers=auth(),
         json={"role": "user", "participant": "user", "content": "Fork point"},
@@ -65,10 +69,6 @@ def test_memory_item_detail_obeys_branch_scope_eligibility(tmp_path):
     fork = client.post(
         "/v1/branches", headers=auth(),
         json={"parent_branch_id": root, "fork_message_id": message["id"], "name": "Child"},
-    ).json()
-    root_memory = client.post(
-        "/v1/memory", headers=auth(),
-        json={"scope": "branch", "scope_id": root, "kind": "fact", "content": "Root memory"},
     ).json()
     child_memory = client.post(
         "/v1/memory", headers=auth(),

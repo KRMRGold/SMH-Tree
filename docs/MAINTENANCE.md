@@ -140,11 +140,11 @@
 
 ## Current candidate — M4 (not yet accepted)
 
-- **Candidate:** backend 0.4.0 — scoped memory CRUD, FTS5 search, lifecycle, and deterministic scope eligibility.
-- **Implementation commit:** 5007e6dd33393d1fc7786a001da7901e12e86444.
+- **Failed candidate:** backend 0.4.0, commit 41ae1363fd2ceb79fa9e117b1d237d4db526dc84; CI run #43116076972 had 53 passed and 1 failed because the API test created inherited branch memory after its fork point.
+- **Repair candidate:** backend 0.4.1. The test now creates ancestor memory before the fork and adds a fork-of-fork cutoff test. The package version is bumped to 0.4.1; the implementation remains on the same migration and service design.
 - **Schema:** migration 0003 adds database-enforced memory scope-id shape and same-scope supersession integrity.
-- **Status:** implementation committed; expanded tests and documentation follow-up are being added. CI and Windows verification pending.
-- **Acceptance gate:** do not accept until automated CI, Windows local tests, and backend-v0.4.0 tag verification pass.
+- **Status:** repair candidate committed; CI and Windows verification pending.
+- **Acceptance gate:** do not accept until automated CI, Windows local tests, and both backend-v0.4.0 / backend-v0.4.1 tag targets are verified.
 
 ## Current work and next steps
 
