@@ -16,7 +16,7 @@
 
 ## Current candidate — M3 (not yet accepted)
 
-- **Candidate backend version:** 0.3.0
+- **Failed candidate:** backend 0.3.0 (CI run 43113745788; 43 passed, 1 failed because the idempotency test retained the old schema-version expectation).\n- **Repair candidate backend version:** 0.3.1
 - **Scope:** deterministic remote-transmission gate, global/user memory filtering policy, and append-only transmission audit.
 - **Status:** Implementation candidate; automated CI, Windows verification, and candidate tags are pending.
 - **Schema:** Migration 0002 adds database-enforced update/delete rejection for the existing `remote_transmissions` ledger.
