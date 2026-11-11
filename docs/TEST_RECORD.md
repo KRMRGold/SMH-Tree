@@ -3,10 +3,13 @@
 ## Current candidate — M4 (not yet accepted)
 
 - **Failed candidate:** backend 0.4.0, commit 41ae1363fd2ceb79fa9e117b1d237d4db526dc84; CI run #43116076972: 53 passed, 1 failed. The failing API test created ancestor memory after the fork and incorrectly expected it to be inherited.
-- **Repair candidate:** backend 0.4.1. Corrected the test setup and added a fork-of-fork test proving each ancestor receives its own fork-time cutoff.
+- **Repair candidate:** backend 0.4.1, candidate commit 0cfbbcc0d34a74264628a15f76275fe115ce787f. Corrected the test setup and added a fork-of-fork test proving each ancestor receives its own fork-time cutoff.
+- **Automated CI:** PASS — [Backend CI #15](https://github.com/KRMRGold/SMH-Tree/actions/runs/43116317844), Python 3.12.16, pytest 9.2.0, 55 passed in 3.15s.
+- **Windows verification:** pending user-run uv run pytest on the final candidate checkout.
+- **Tags:** pending. backend-v0.4.0 must preserve the failed candidate commit; backend-v0.4.1 will target the accepted documentation follow-up commit.
 - **Schema:** migration 0003 adds database-enforced memory scope and supersession invariants.
 - **Coverage added:** scoped CRUD, FTS5 search, branch ancestry fork-time cutoffs, sibling exclusion, remote global/user sharing, lifecycle transitions, and API authorization.
-- **Acceptance status:** CANDIDATE — do not accept until CI, Windows verification, and backend-v0.4.0 / backend-v0.4.1 tag targets are verified.
+- **Acceptance status:** CANDIDATE — CI passes; do not accept until Windows verification and backend-v0.4.0 / backend-v0.4.1 tag targets are verified.
 
 
 ## Latest accepted run — M3
