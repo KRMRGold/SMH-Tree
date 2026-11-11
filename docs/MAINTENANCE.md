@@ -14,13 +14,17 @@
 - **Continuity module:** Context Continuity 0.1.2.
 
 
-## Current candidate — M3 (not yet accepted)
+## M3 — Remote gate and audit (accepted)
 
 - **Failed candidate:** backend 0.3.0 (CI run 43113745788; 43 passed, 1 failed because the idempotency test retained the old schema-version expectation).
-- **Repair candidate backend version:** 0.3.1
-- **Passing CI:** [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), commit 0372fa7158de293ede722663125c86a6cb39db81, Python 3.12.16, 44 passed in 2.42s.
+- **Accepted backend version:** 0.3.1
+- **Implementation/tag commit:** c61c8a9398e3ce008c40da25a647806827e1df7a
+- **Accepted tag:** `backend-v0.3.1` (verified against the exact commit above).
+- **Failed-candidate tag:** `backend-v0.3.0` → 0d106009302e235cec68850b0a1c52892eb9bc34 (verified).
+- **CI:** [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), Python 3.12.16, 44 passed in 2.42s.
 - **Scope:** deterministic remote-transmission gate, global/user memory filtering policy, and append-only transmission audit.
-- **Status:** CI passes (44 tests in 2.42s); Windows verification and candidate tags are pending.
+- **Windows verification:** User-reported `uv run pytest`, Windows `win32`, Python 3.12.13, 44 passed in 6.23s.
+- **Acceptance:** Accepted on 2026-11-11 after CI, Windows verification, and both tag targets were verified.
 - **Schema:** Migration 0002 adds database-enforced update/delete rejection for the existing `remote_transmissions` ledger.
 
 ## Implemented behavior
@@ -61,11 +65,22 @@
 - Chat runs and ordered run steps are persisted in the existing M0 schema; no migration was required.
 - User messages are persisted before generation. The assistant response is persisted exactly once only after successful completion. Provider failures mark the run failed; cancellation marks it cancelled and does not persist partial assistant output.
 - Remote provider requests are rejected unless `allow_remote=true` is explicitly supplied. Remote API keys are accepted through the per-request `X-Provider-API-Key` header and are not written to SQLite or run records.
-- M3 adds an in-service remote gate, a committed pre-request transmission record, an authenticated audit-list endpoint, and database-enforced append-only triggers. Global/user memory filtering is a deterministic permission helper; memory is not added to chat packets until M5.
+
 - Verification: [Backend CI #12](https://github.com/KRMRGold/SMH-Tree/actions/runs/43111577117), implementation commit ee757c186acf20d31d3fcc0b5a20292cd80ee530, Python 3.12.16, 38 tests passed in 2.42s.
 - Additional user-run verification: Windows (`win32`), Python 3.12.13, `uv run pytest` — 38 passed in 5.71s, reported by the user on the updated checkout.
 - Tags: `backend-v0.2.0` points to failed candidate e1eb64313d312c530b866ddfca8eda59dc9391ce; `backend-v0.2.1` points to a6dd5a9808a9ea235befbd205a45fe70baf56067, the documentation follow-up commit containing the tested M2 implementation. Both refs were verified on GitHub.
 - Provider configuration is currently environment-based; persistent provider creation via `POST /v1/providers` remains deferred.
+
+### M3 implemented behavior
+
+- Remote-provider transmission authorization is enforced in the chat service immediately before provider invocation; remote calls fail closed unless the run explicitly opts in.
+- Each allowed remote request writes a durable audit record before provider network I/O. The record includes provider label, run ID, referenced message IDs, UTF-8 byte count of the compact role/content packet, and timestamp.
+- Authenticated `GET /v1/transmissions` lists the audit records.
+- Migration 0002 adds SQLite triggers that reject updates and deletes from `remote_transmissions`.
+- Global and user memory are excluded by default by the deterministic remote-memory permission helper. Explicit per-scope settings enable sharing; the context compiler integration remains M5 work.
+- Verification: [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), implementation/tag commit c61c8a9398e3ce008c40da25a647806827e1df7a, Python 3.12.16, 44 tests passed in 2.30s.
+- Additional user-run verification: Windows (`win32`), Python 3.12.13, `uv run pytest` — 44 passed in 6.23s.
+- Tags: `backend-v0.3.0` points to failed candidate 0d106009302e235cec68850b0a1c52892eb9bc34; `backend-v0.3.1` points to accepted candidate c61c8a9398e3ce008c40da25a647806827e1df7a. Both refs were independently fetched from GitHub and matched exact targets.
 
 ## Architecture and invariants
 
@@ -111,6 +126,10 @@
 | Provider failure event and failed run | pytest SSE integration test |
 | Cancellation and partial-output suppression | pytest async service test |
 | Remote provider denied without explicit opt-in | pytest chat API test |
+| Remote audit committed before provider invocation | pytest chat API test with independent DB read |
+| Authenticated transmission audit listing | pytest API integration test |
+| Transmission audit update/delete rejected | pytest database migration test |
+| Global/user memory stripped by default and enabled per scope | pytest remote-gate unit tests |
 
 ## Failed candidates
 
@@ -120,5 +139,5 @@
 
 ## Current work and next steps
 
-- M3 candidate 0.3.0 is implemented; run CI and Windows tests, then tag the candidate before acceptance.
+- M3 is accepted at backend-v0.3.1. Next milestone: M4 — memory services and scope enforcement (consult Build-spec.md before starting).
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.

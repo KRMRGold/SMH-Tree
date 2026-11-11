@@ -1,18 +1,21 @@
 # Test Record
 
-## Current candidate — M3 (not yet accepted)
+## Latest accepted run — M3
 
-- **Failed candidate:** backend 0.3.0 (CI run [#13](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113745788): 43 passed, 1 failed due to a stale migration-version assertion).
-- **Repair candidate:** backend 0.3.1 (M3 — Remote gate and audit)
-- **Candidate commit:** 0372fa7158de293ede722663125c86a6cb39db81
+- **Accepted version:** backend 0.3.1 (M3 — Remote gate and audit)
+- **Implementation/tag commit:** c61c8a9398e3ce008c40da25a647806827e1df7a
+- **Accepted tag:** `backend-v0.3.1`
+- **Failed-candidate tag:** `backend-v0.3.0` → 0d106009302e235cec68850b0a1c52892eb9bc34
+- **Failed first attempt:** backend 0.3.0, CI run [#13](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113745788), 43 passed and 1 failed due to a stale schema-version assertion. The version was not reused.
 - **Run date:** 2026-11-11
-- **Automated CI:** PASS — [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), Python 3.12.16, 44 passed in 2.42s.
-- **Windows verification:** pending user-run `uv run pytest` on the M3 candidate checkout.
-- **Candidate tags:** pending. Do not treat this candidate as accepted until the candidate tag is created and verified.
+- **Automated CI:** PASS — [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), Python 3.12.16, 44 passed in 2.30s.
+- **Windows verification:** PASS — user-reported Windows (`win32`), Python 3.12.13, `uv run pytest`, 44 passed in 6.23s.
+- **Tag verification:** PASS — GitHub refs independently verified: `backend-v0.3.0` → 0d106009302e235cec68850b0a1c52892eb9bc34; `backend-v0.3.1` → c61c8a9398e3ce008c40da25a647806827e1df7a.
 - **Coverage added:** denied remote calls do not invoke the provider or create an audit row; allowed remote calls have a committed audit row before provider invocation; local calls are not audited; global/user memory is stripped unless the matching setting is enabled; audit update/delete operations are rejected; authenticated audit listing is covered.
+- **Acceptance status:** ACCEPTED — CI, user-run Windows verification, and both release tag targets verified.
 
 
-## Latest accepted run — M2
+## Previous accepted run — M2
 
 - **Accepted version:** backend 0.2.1 (M2 — Provider layer and chat streaming)
 - **Implementation commit:** ee757c186acf20d31d3fcc0b5a20292cd80ee530
