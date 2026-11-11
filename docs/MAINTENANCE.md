@@ -3,9 +3,10 @@
 ## Current accepted state
 
 - **Project:** SMH-Tree
-- **Last accepted backend version:** 0.2.1 (M2 — Provider layer and chat streaming)
-- **Last accepted implementation commit:** ee757c186acf20d31d3fcc0b5a20292cd80ee530
-- **Last accepted tag target:** a6dd5a9808a9ea235befbd205a45fe70baf56067 (documentation follow-up commit; tested M2 implementation unchanged)
+- **Last accepted backend version:** 0.3.1 (M3 — Remote gate and audit)
+- **Last accepted implementation commit:** c61c8a9398e3ce008c40da25a647806827e1df7a
+- **Last accepted tag target:** c61c8a9398e3ce008c40da25a647806827e1df7a (`backend-v0.3.1`)
+- **M3 acceptance:** Accepted on 2026-11-11. Both `backend-v0.3.0` (failed candidate) and `backend-v0.3.1` (passing candidate) were created and independently verified against their exact commit targets.
 - **M2 acceptance:** Accepted on 2026-11-11. Both `backend-v0.2.0` (failed candidate) and `backend-v0.2.1` (passing candidate) were created and independently verified against their exact commit targets.
 - **M0 acceptance:** Accepted on 2026-11-11. The user explicitly chose to proceed without creating the required backend-v0.0.3 Git tag. This is a documented workflow exception, not a claim that the tag exists.
 - **M1 acceptance:** Accepted on 2026-11-11. The required backend-v0.1.0 tag was created and verified. It points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, a documentation follow-up commit whose code tree retains the tested M1 implementation from b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00.
@@ -21,7 +22,7 @@
 - **Implementation/tag commit:** c61c8a9398e3ce008c40da25a647806827e1df7a
 - **Accepted tag:** `backend-v0.3.1` (verified against the exact commit above).
 - **Failed-candidate tag:** `backend-v0.3.0` → 0d106009302e235cec68850b0a1c52892eb9bc34 (verified).
-- **CI:** [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), Python 3.12.16, 44 passed in 2.42s.
+- **CI:** [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), Python 3.12.16, 44 passed in 2.30s.
 - **Scope:** deterministic remote-transmission gate, global/user memory filtering policy, and append-only transmission audit.
 - **Windows verification:** User-reported `uv run pytest`, Windows `win32`, Python 3.12.13, 44 passed in 6.23s.
 - **Acceptance:** Accepted on 2026-11-11 after CI, Windows verification, and both tag targets were verified.
