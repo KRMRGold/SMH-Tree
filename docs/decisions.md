@@ -38,3 +38,12 @@ This is the project's living decision log. Add concise entries when an implement
 - **Append-only enforcement:** SQLite triggers reject updates and deletes from `remote_transmissions`; M3 adds migration 0002 rather than recreating the M0 table.
 - **Memory scope timing:** Global/user filtering is a deterministic helper with opt-in settings defaulting false. M5 must call it when the context compiler begins adding memory to chat packets; M3 has no memory context compiler to wire yet.
 - **Audit API:** Add authenticated `GET /v1/transmissions`; pagination and UI presentation are deferred.
+
+
+## M4 decisions
+
+- Memory content is immutable after creation. A changed belief or preference is represented by a new item, then the prior item is marked superseded with a same-scope superseded_by reference. Outdated and archived states preserve the original record; there is no hard-delete endpoint.
+- Branch memory visibility walks from the requested branch toward the root. Each ancestor's memory is eligible only when created_at is at or before the fork-message timestamp for the edge leading to that ancestor. Each fork-of-fork edge has its own cutoff.
+- The current backend has one local user and no account system. User memory therefore uses a NULL scope_id; AccessContext.user_id is a stable local placeholder until multi-user support is in scope.
+- M4 exposes FTS5 search through GET /v1/memory?q=..., restricted by the same scope-eligibility predicate as list and detail reads. FTS terms are quoted and OR-combined to avoid interpreting raw input as FTS operators.
+- Migration 0003 enforces scope-id shape and same-scope active replacement links. Entity existence and branch ancestry remain deterministic service-level checks.

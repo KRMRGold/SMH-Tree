@@ -138,7 +138,15 @@
 - **backend 0.0.2:** failed because the health test still expected version 0.0.1 after the version bump; 14 passed, 1 failed.
 - **backend 0.0.3:** repaired test-client dependency and version assertion; 15 passed on Python 3.12. Accepted as M0 with the user-approved tag exception.
 
+## Current candidate — M4 (not yet accepted)
+
+- **Candidate:** backend 0.4.0 — scoped memory CRUD, FTS5 search, lifecycle, and deterministic scope eligibility.
+- **Implementation commit:** 5007e6dd33393d1fc7786a001da7901e12e86444.
+- **Schema:** migration 0003 adds database-enforced memory scope-id shape and same-scope supersession integrity.
+- **Status:** implementation committed; expanded tests and documentation follow-up are being added. CI and Windows verification pending.
+- **Acceptance gate:** do not accept until automated CI, Windows local tests, and backend-v0.4.0 tag verification pass.
+
 ## Current work and next steps
 
-- M3 is accepted at backend-v0.3.1. Next milestone: M4 — memory services and scope enforcement (consult Build-spec.md before starting).
+- M4 is the current candidate. After acceptance, proceed to M5 — context compiler and inspector.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.

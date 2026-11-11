@@ -1,5 +1,14 @@
 # Test Record
 
+## Current candidate — M4 (not yet accepted)
+
+- **Candidate:** backend 0.4.0 (M4 — Memory).
+- **Implementation commit:** 5007e6dd33393d1fc7786a001da7901e12e86444; tests and final documentation follow-up are being added.
+- **Schema:** migration 0003 adds database-enforced memory scope and supersession invariants.
+- **Coverage added:** scoped CRUD, FTS5 search, branch ancestry fork-time cutoffs, sibling exclusion, remote global/user sharing, lifecycle transitions, and API authorization.
+- **Acceptance status:** CANDIDATE — do not accept until CI, Windows verification, and backend-v0.4.0 tag verification pass.
+
+
 ## Latest accepted run — M3
 
 - **Accepted version:** backend 0.3.1 (M3 — Remote gate and audit)
