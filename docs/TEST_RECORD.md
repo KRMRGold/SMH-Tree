@@ -2,11 +2,12 @@
 
 ## Current candidate — M3 (not yet accepted)
 
-- **Failed candidate:** backend 0.3.0 (CI run [#13](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113745788): 43 passed, 1 failed due to a stale migration-version assertion).\n- **Repair candidate:** backend 0.3.1 (M3 — Remote gate and audit)
-- **Candidate commit:** pending CI for repair 0.3.1
+- **Failed candidate:** backend 0.3.0 (CI run [#13](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113745788): 43 passed, 1 failed due to a stale migration-version assertion).
+- **Repair candidate:** backend 0.3.1 (M3 — Remote gate and audit)
+- **Candidate commit:** 0372fa7158de293ede722663125c86a6cb39db81
 - **Run date:** 2026-11-11
-- **Automated CI:** repair CI pending.
-- **Windows verification:** pending user-run `uv run pytest`.
+- **Automated CI:** PASS — [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), Python 3.12.16, 44 passed in 2.42s.
+- **Windows verification:** pending user-run `uv run pytest` on the M3 candidate checkout.
 - **Candidate tags:** pending. Do not treat this candidate as accepted until the candidate tag is created and verified.
 - **Coverage added:** denied remote calls do not invoke the provider or create an audit row; allowed remote calls have a committed audit row before provider invocation; local calls are not audited; global/user memory is stripped unless the matching setting is enabled; audit update/delete operations are rejected; authenticated audit listing is covered.
 

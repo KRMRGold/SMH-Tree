@@ -16,9 +16,11 @@
 
 ## Current candidate — M3 (not yet accepted)
 
-- **Failed candidate:** backend 0.3.0 (CI run 43113745788; 43 passed, 1 failed because the idempotency test retained the old schema-version expectation).\n- **Repair candidate backend version:** 0.3.1
+- **Failed candidate:** backend 0.3.0 (CI run 43113745788; 43 passed, 1 failed because the idempotency test retained the old schema-version expectation).
+- **Repair candidate backend version:** 0.3.1
+- **Passing CI:** [Backend CI #14](https://github.com/KRMRGold/SMH-Tree/actions/runs/43113953986), commit 0372fa7158de293ede722663125c86a6cb39db81, Python 3.12.16, 44 passed in 2.42s.
 - **Scope:** deterministic remote-transmission gate, global/user memory filtering policy, and append-only transmission audit.
-- **Status:** Implementation candidate; automated CI, Windows verification, and candidate tags are pending.
+- **Status:** CI passes (44 tests in 2.42s); Windows verification and candidate tags are pending.
 - **Schema:** Migration 0002 adds database-enforced update/delete rejection for the existing `remote_transmissions` ledger.
 
 ## Implemented behavior
