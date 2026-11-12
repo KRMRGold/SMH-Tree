@@ -122,3 +122,44 @@ def filter_remote_memory_items(connection: sqlite3.Connection,
         else:
             retained.append(item)
     return retained, dropped
+
+def can_read(connection: sqlite3.Connection, ctx: AccessContext,
+             obj_type: str, obj_id: str) -> bool:
+    """Check deterministic visibility for canonical records used by context sources."""
+    if obj_type in {"claim", "source", "open_question"}:
+        table = {
+            "claim": "claims",
+            "source": "sources",
+            "open_question": "open_questions",
+        }[obj_type]
+        row = connection.execute(
+            f"SELECT project_id FROM {table} WHERE id = ?", (obj_id,)
+        ).fetchone()
+        if row is None:
+            return False
+        project_id = row["project_id"]
+        return project_id is None or (
+            ctx.project_id is not None and str(project_id) == ctx.project_id
+        )
+
+    if obj_type == "message":
+        if ctx.branch_id is None:
+            return False
+        from cogplat.services import conversations
+        return any(
+            str(message["id"]) == obj_id
+            for message in conversations.resolve_history(connection, ctx.branch_id)
+        )
+
+    if obj_type == "memory_item":
+        from cogplat.services import memory
+        item = memory_repo_item(connection, obj_id)
+        return item is not None and memory._item_is_visible(connection, item, ctx)
+
+    raise ValueError(f"Unsupported object type for access check: {obj_type}")
+
+
+def memory_repo_item(connection: sqlite3.Connection, memory_id: str):
+    from cogplat.repos import memory as memory_repo
+    return memory_repo.get_memory_item(connection, memory_id)
+
