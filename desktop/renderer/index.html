@@ -12,16 +12,80 @@
     <script type="module" src="./renderer.js"></script>
   </head>
   <body>
-    <main class="startup">
-      <div class="mark" aria-hidden="true">SMH</div>
-      <p class="eyebrow">LOCAL COGNITIVE WORKSPACE</p>
-      <h1>SMH-Tree</h1>
-      <p class="subtitle">A workspace for branching conversations and connected context.</p>
-      <div class="connection" role="status" aria-live="polite">
-        <span class="indicator" id="indicator"></span>
-        <span id="status">Connecting to local backend…</span>
-      </div>
-      <p class="version" id="version"></p>
-    </main>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">SMH</div>
+          <div>
+            <div class="brand-name">SMH-Tree</div>
+            <div class="brand-caption">LOCAL COGNITIVE WORKSPACE</div>
+          </div>
+        </header>
+
+        <section class="project-section">
+          <div class="section-heading">
+            <label for="project-select">Workspace</label>
+            <button class="icon-button" id="new-project" type="button" title="New project" aria-label="New project">+</button>
+          </div>
+          <select id="project-select" aria-label="Project">
+            <option value="">All projects</option>
+          </select>
+        </section>
+
+        <section class="conversation-section">
+          <div class="section-heading">
+            <span>Conversations</span>
+            <button class="icon-button" id="new-conversation" type="button" title="New conversation" aria-label="New conversation">+</button>
+          </div>
+          <div id="conversation-list" class="conversation-list"></div>
+        </section>
+
+        <footer class="sidebar-footer">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="connection-status">Connecting to local backend…</span>
+        </footer>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="active-context">
+            <div class="eyebrow">CURRENT THREAD</div>
+            <h1 id="active-title">Choose a conversation</h1>
+          </div>
+          <div class="model-controls">
+            <label>
+              <span>Provider</span>
+              <select id="provider-select" aria-label="Provider"></select>
+            </label>
+            <label class="model-field">
+              <span>Model</span>
+              <input id="model-name" type="text" autocomplete="off" placeholder="Choose or enter a model">
+            </label>
+            <label class="remote-toggle" id="remote-toggle-wrap" hidden>
+              <input id="allow-remote" type="checkbox">
+              <span>Allow remote for this message</span>
+            </label>
+          </div>
+        </header>
+
+        <section id="empty-state" class="empty-state">
+          <div class="empty-symbol" aria-hidden="true">⌘</div>
+          <h2>A place for thoughts to branch.</h2>
+          <p>Create a conversation or choose one from the sidebar to begin.</p>
+        </section>
+
+        <section id="chat-panel" class="chat-panel" hidden>
+          <div id="message-list" class="message-list" aria-live="polite"></div>
+          <div id="chat-status" class="chat-status" role="status" aria-live="polite"></div>
+          <form id="composer" class="composer">
+            <textarea id="message-input" rows="3" maxlength="200000" placeholder="Write a message…" required></textarea>
+            <div class="composer-footer">
+              <span>Enter to send · Shift+Enter for a new line</span>
+              <button id="send-button" type="submit">Send <span aria-hidden="true">↗</span></button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
   </body>
 </html>
