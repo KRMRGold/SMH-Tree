@@ -172,20 +172,19 @@ def compile_context(
                 _source(memory_id, "memory", reason="remote_sharing_disabled")
             )
 
-    eligible_by_id = {str(item["id"]): item for item in eligible_items}
     candidates = [
         item for item in eligible_items
         if str(item["id"]) in fts_order
         or int(item["importance"]) >= 4
         or str(item["kind"]) == "preference"
     ]
+    candidates.sort(key=lambda item: str(item["id"]))
+    candidates.sort(key=lambda item: str(item["created_at"]), reverse=True)
+    candidates.sort(key=lambda item: int(item["importance"]), reverse=True)
     candidates.sort(
         key=lambda item: (
             0 if str(item["id"]) in fts_order else 1,
             fts_order.get(str(item["id"]), math.inf),
-            -int(item["importance"]),
-            str(item["created_at"]),
-            str(item["id"]),
         )
     )
     candidate_ids = {str(item["id"]) for item in candidates}
