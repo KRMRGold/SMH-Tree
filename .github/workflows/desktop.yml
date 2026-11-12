@@ -1,0 +1,48 @@
+name: Desktop CI
+
+on:
+  push:
+    branches: [main, m8-desktop-shell]
+    paths:
+      - "desktop/**"
+      - "backend/src/cogplat/__main__.py"
+      - ".github/workflows/desktop.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - "backend/src/cogplat/__main__.py"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    name: Desktop Node tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install desktop dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check main/main.js
+          node --check main/backend-supervisor.js
+          node --check preload/preload.js
+          node --check renderer/renderer.js
+
+      - name: Run desktop tests
+        run: npm test
