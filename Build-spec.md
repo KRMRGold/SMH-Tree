@@ -435,9 +435,9 @@ The context compiler is pure, deterministic, and unit-testable. It makes no mode
 
 ```python
 def compile_context(
+    connection: sqlite3.Connection,
     req: CompileRequest,
-    repos,
-    counter: TokenCounter,
+    counter: TokenCounter | None = None,
 ) -> ContextPacket: ...
 ```
 
