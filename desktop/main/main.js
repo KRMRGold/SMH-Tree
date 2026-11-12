@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } from "electron";
-import { readFile, writeFile, unlink } from "node:fs/promises";
+import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { BackendSupervisor } from "./backend-supervisor.js";
@@ -13,14 +13,15 @@ const rendererUrl = pathToFileURL(rendererPath).href;
 const providerKeysPath = path.join(app.getPath("userData"), "provider-keys.enc");
 
 async function readProviderKeys() {
-  if (!safeStorage.isEncryptionAvailable()) throw new Error("OS-backed secure storage is unavailable.");
+  let encrypted;
   try {
-    const encrypted = await readFile(providerKeysPath);
-    return JSON.parse(safeStorage.decryptString(encrypted));
+    encrypted = await readFile(providerKeysPath);
   } catch (error) {
     if (error.code === "ENOENT") return {};
     throw error;
   }
+  if (!safeStorage.isEncryptionAvailable()) throw new Error("OS-backed secure storage is unavailable.");
+  return JSON.parse(safeStorage.decryptString(encrypted));
 }
 function validProviderId(value) {
   if (typeof value !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(value)) throw new Error("Invalid provider identifier.");
@@ -33,7 +34,10 @@ async function providerKey(providerId) {
 }
 async function writeProviderKeys(keys) {
   if (!safeStorage.isEncryptionAvailable()) throw new Error("OS-backed secure storage is unavailable.");
-  await writeFile(providerKeysPath, safeStorage.encryptString(JSON.stringify(keys)), { mode: 0o600 });
+  await mkdir(path.dirname(providerKeysPath), { recursive: true });
+  const temporaryPath = `${providerKeysPath}.tmp`;
+  await writeFile(temporaryPath, safeStorage.encryptString(JSON.stringify(keys)), { mode: 0o600 });
+  await rename(temporaryPath, providerKeysPath);
 }
 const allowedExternalHosts = new Set([
   "github.com",
