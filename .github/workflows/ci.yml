@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, m8-desktop-shell]
   pull_request:
     branches: [main]
   workflow_dispatch:
