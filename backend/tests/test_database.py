@@ -40,7 +40,7 @@ def open_migrated_db(path):
 def test_migration_applies_once_and_is_idempotent(tmp_path):
     connection = connect_db(tmp_path / "app.db")
     try:
-        assert apply_migrations(connection) == 5
+        assert apply_migrations(connection) == 6
         first = connection.execute(
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
@@ -50,7 +50,7 @@ def test_migration_applies_once_and_is_idempotent(tmp_path):
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
 
-        assert len(first) == 5
+        assert len(first) == 6
         assert [tuple(row) for row in second] == [tuple(row) for row in first]
     finally:
         connection.close()
