@@ -125,6 +125,11 @@ function registerIpcHandlers() {
     return Boolean(keys[validProviderId(providerId)]);
   });
 
+  ipcMain.handle("cog:get-data-directory", (event) => {
+    assertTrustedSender(event);
+    return app.getPath("userData");
+  });
+
   ipcMain.handle("cog:get-api-base", (event) => {
     assertTrustedSender(event);
     return supervisor.connection?.baseUrl ?? null;
