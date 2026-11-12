@@ -1,6 +1,7 @@
 """Pydantic contracts for sources, claims, evidence, and epistemic history."""
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -45,8 +46,8 @@ class ClaimCreate(BaseModel):
     subject: str | None = Field(default=None, max_length=2_000)
     predicate: str | None = Field(default=None, max_length=2_000)
     object: str | None = Field(default=None, max_length=2_000)
-    valid_from: str | None = Field(default=None, max_length=40)
-    valid_to: str | None = Field(default=None, max_length=40)
+    valid_from: datetime | None = None
+    valid_to: datetime | None = None
     origin_kind: OriginKind = "user"
     origin_ref: str | None = Field(default=None, max_length=500)
 
