@@ -68,6 +68,35 @@
           </div>
         </header>
 
+        <nav class="workspace-tabs" aria-label="Workspace views">
+          <button type="button" class="view-tab" data-view="chat" aria-current="true">Chat</button>
+          <button type="button" class="view-tab" data-view="context">Context</button>
+          <button type="button" class="view-tab" data-view="memory">Memory</button>
+          <button type="button" class="view-tab" data-view="claims">Claims</button>
+        </nav>
+
+        <section id="context-panel" class="data-panel" hidden>
+          <header class="panel-heading"><div><div class="eyebrow">LAST CHAT RUN</div><h2>Context inspector</h2></div><button type="button" id="refresh-context" class="secondary-button">Refresh</button></header>
+          <p class="panel-note">The exact context packet saved for the selected run. This view does not recompile or change the packet.</p>
+          <div id="context-content" class="record-list"><p class="muted">Send a message to inspect its context packet.</p></div>
+        </section>
+
+        <section id="memory-panel" class="data-panel" hidden>
+          <header class="panel-heading"><div><div class="eyebrow">PERSISTENT NOTES</div><h2>Memory</h2></div><button type="button" id="new-memory" class="primary-button">Add memory</button></header>
+          <div class="panel-filters">
+            <label>Scope <select id="memory-scope"><option value="">All visible scopes</option><option>global</option><option>user</option><option>project</option><option>conversation</option><option>branch</option></select></label>
+            <label>State <select id="memory-state"><option value="active">Active</option><option value="all">All states</option><option value="outdated">Outdated</option><option value="superseded">Superseded</option><option value="archived">Archived</option></select></label>
+          </div>
+          <div id="memory-content" class="record-list"><p class="muted">Loading memory…</p></div>
+        </section>
+
+        <section id="claims-panel" class="data-panel" hidden>
+          <header class="panel-heading"><div><div class="eyebrow">KNOWLEDGE RECORDS</div><h2>Claims</h2></div><button type="button" id="refresh-claims" class="secondary-button">Refresh</button></header>
+          <div class="panel-filters"><label>Search claims <input id="claim-search" type="search" placeholder="Find a claim…"></label></div>
+          <div class="claims-layout"><div id="claims-list" class="record-list"><p class="muted">Loading claims…</p></div><article id="claim-detail" class="claim-detail"><p class="muted">Select a claim to inspect its status, evidence, and relationships.</p></article></div>
+          <section class="open-questions"><h3>Open questions</h3><div id="open-questions-list" class="record-list"></div></section>
+        </section>
+
         <section id="empty-state" class="empty-state">
           <div class="empty-symbol" aria-hidden="true">⌘</div>
           <h2>A place for thoughts to branch.</h2>
