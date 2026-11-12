@@ -420,7 +420,7 @@ async function showClaim(claimId) {
   for (const item of assessments) addText(assessmentSection,"p","record-body",`${item.dimension}: ${item.value_num ?? item.value_text ?? ""} ${item.rationale ?? ""}`);
   const statusButton=document.createElement("button"); statusButton.type="button"; statusButton.className="secondary-button"; statusButton.textContent="Record status";
   statusButton.addEventListener("click",async()=>{
-    const status=window.prompt("Status: proposed, reported, inferred, corroborated, contested, accepted, rejected, superseded, unresolved, unknown","investigating");
+    const status=window.prompt("Status: proposed, reported, inferred, corroborated, contested, accepted, rejected, superseded, unresolved, unknown","reported");
     if(!status)return;
     const payload={schema_version:1,status,scope:"default",rationale:"Recorded from desktop claims panel.",actor_kind:"user"};
     if(status==="accepted") payload.policy=window.prompt("Acceptance policy (required)");
