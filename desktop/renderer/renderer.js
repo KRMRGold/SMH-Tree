@@ -483,7 +483,8 @@ async function loadSettings() {
   const keySelect=$("#key-provider"); keySelect.replaceChildren();
   for(const provider of state.providers) keySelect.append(makeOption(provider.id,provider.label));
   if(state.selectedProviderId) keySelect.value=state.selectedProviderId;
-  const saved=await window.cog.hasProviderApiKey(keySelect.value);
+  $("#data-directory").textContent=await window.cog.getDataDirectory();
+  const saved=keySelect.value ? await window.cog.hasProviderApiKey(keySelect.value) : false;
   $("#provider-key-status").textContent=saved ? "A key is saved securely for this provider." : "No key saved for this provider.";
   const values=await api("/v1/settings");
   $("#share-global-memory").checked=Boolean(values.share_global_memory_remote);
