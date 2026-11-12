@@ -187,7 +187,7 @@ async function selectProvider(providerId) {
   if (!state.selectedProviderRemote) elements.allowRemote.checked = false;
 
   try {
-    const result = await api(`/v1/providers/${encodeURIComponent(providerId)}/models`);
+    const result = await api(`/v1/providers/${encodeURIComponent(providerId)}/models`, { providerId });
     const models = result.items ?? [];
     if (models.length) {
       const current = elements.modelName.value.trim();
@@ -259,6 +259,7 @@ async function sendMessage(event) {
     `/v1/branches/${encodeURIComponent(state.selectedBranchId)}/chat`,
     {
       method: "POST",
+      providerId: state.selectedProviderId,
       body: {
         content,
         provider: state.selectedProviderId,
@@ -291,6 +292,7 @@ const views = {
   context: $("#context-panel"),
   memory: $("#memory-panel"),
   claims: $("#claims-panel"),
+  settings: $("#settings-panel"),
 };
 function switchView(name) {
   if (!views[name]) return;
@@ -302,6 +304,7 @@ function switchView(name) {
   if (name === "context") void loadContext().catch(showPanelError);
   if (name === "memory") void loadMemory().catch(showPanelError);
   if (name === "claims") void loadClaims().catch(showPanelError);
+  if (name === "settings") void loadSettings().catch(showPanelError);
 }
 function showPanelError(error) {
   elements.chatStatus.textContent = error?.message ?? String(error);
@@ -338,8 +341,9 @@ async function loadContext() {
   const messages = Array.isArray(packet.messages) ? packet.messages : [];
   recordCard(target, "Packet", `${messages.length} messages`, "Exact stored packet sent to the provider. Sensitive content is displayed locally.");
   for (const message of messages) recordCard(target, String(message.role ?? "message"), message.participant ?? "", message.content ?? "");
-  const dropped = packet.dropped ?? packet.omitted ?? [];
-  recordCard(target, "Compiler metadata", "", JSON.stringify(packet.metadata ?? packet, null, 2));
+  const dropped = packet.excluded_sources ?? [];
+  recordCard(target, "Included sources", `${(packet.included_sources ?? []).length} references`, JSON.stringify(packet.included_sources ?? [], null, 2));
+  recordCard(target, "Compiler metadata", "", JSON.stringify({compiler_version:packet.compiler_version, section_allocations:packet.section_allocations, transformations:packet.transformations, max_input_tokens:packet.max_input_tokens, reserve_output_tokens:packet.reserve_output_tokens, input_budget:packet.input_budget}, null, 2));
   if (Array.isArray(dropped) && dropped.length) recordCard(target, "Dropped context", `${dropped.length} omitted items`, JSON.stringify(dropped, null, 2));
 }
 async function loadMemory() {
@@ -448,7 +452,46 @@ $("#memory-scope").addEventListener("change",()=>void loadMemory().catch(showPan
 $("#memory-state").addEventListener("change",()=>void loadMemory().catch(showPanelError));
 $("#new-memory").addEventListener("click",()=>void createMemory().catch(showPanelError));
 $("#refresh-claims").addEventListener("click",()=>void loadClaims().catch(showPanelError));
+$("#refresh-settings").addEventListener("click",()=>void loadSettings().catch(showPanelError));
+$("#key-provider").addEventListener("change",()=>void window.cog.hasProviderApiKey($("#key-provider").value).then(saved=>{$("#provider-key-status").textContent=saved?"A key is saved securely for this provider.":"No key saved for this provider.";}));
+$("#save-provider-key").addEventListener("click",()=>void saveProviderKey().catch(showPanelError));
+$("#delete-provider-key").addEventListener("click",()=>void deleteProviderKey().catch(showPanelError));
+$("#save-sharing-settings").addEventListener("click",()=>void saveSharingSettings().catch(showPanelError));
 $("#claim-search").addEventListener("change",()=>void loadClaims().catch(showPanelError));
+
+
+async function loadSettings() {
+  const keySelect=$("#key-provider"); keySelect.replaceChildren();
+  for(const provider of state.providers) keySelect.append(makeOption(provider.id,provider.label));
+  if(state.selectedProviderId) keySelect.value=state.selectedProviderId;
+  const saved=await window.cog.hasProviderApiKey(keySelect.value);
+  $("#provider-key-status").textContent=saved ? "A key is saved securely for this provider." : "No key saved for this provider.";
+  const values=await api("/v1/settings");
+  $("#share-global-memory").checked=Boolean(values.share_global_memory_remote);
+  $("#share-user-memory").checked=Boolean(values.share_user_memory_remote);
+}
+async function saveProviderKey() {
+  const providerId=$("#key-provider").value;
+  const value=$("#provider-api-key").value;
+  if(!providerId) throw new Error("Choose a provider first.");
+  if(!value.trim()) throw new Error("Enter an API key to save.");
+  await window.cog.setProviderApiKey(providerId,value);
+  $("#provider-api-key").value="";
+  $("#provider-key-status").textContent="Key encrypted and saved by the operating system.";
+}
+async function deleteProviderKey() {
+  const providerId=$("#key-provider").value;
+  if(!providerId) return;
+  await window.cog.deleteProviderApiKey(providerId);
+  $("#provider-key-status").textContent="Saved key deleted.";
+}
+async function saveSharingSettings() {
+  await api("/v1/settings",{method:"PATCH",body:{
+    share_global_memory_remote:$("#share-global-memory").checked,
+    share_user_memory_remote:$("#share-user-memory").checked,
+  }});
+  $("#provider-key-status").textContent="Remote memory-sharing settings saved.";
+}
 
 async function initialize() {
   try {
