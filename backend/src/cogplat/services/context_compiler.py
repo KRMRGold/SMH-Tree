@@ -438,13 +438,6 @@ def compile_context(
     if selected_project is not None and project_ref is not None:
         included.append(_source(project_ref, "project"))
     included.extend(
-        _source(str(item["id"]), "claim", claim_type=str(item["claim_type"]),
-                project_id=item["project_id"],
-                status=[{"scope": status["scope"], "status": status["status"]}
-                        for status in _effective_claim_statuses(item, req.access_context.project_id)])
-        for group in selected_claim_bundles for item, _message in group
-    )
-    included.extend(
         _source(
             str(item["id"]),
             "memory",
@@ -452,6 +445,13 @@ def compile_context(
             scope_id=item["scope_id"],
         )
         for item, _message in selected_memory
+    )
+    included.extend(
+        _source(str(item["id"]), "claim", claim_type=str(item["claim_type"]),
+                project_id=item["project_id"],
+                status=[{"scope": status["scope"], "status": status["status"]}
+                        for status in _effective_claim_statuses(item, req.access_context.project_id)])
+        for group in selected_claim_bundles for item, _message in group
     )
     if marker_message is not None:
         included.append(_source("history:omission-marker", "history_marker"))
