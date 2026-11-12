@@ -3,10 +3,11 @@
 ## Current accepted state
 
 - **Project:** SMH-Tree
-- **Last accepted backend version:** 0.5.0 (M5 — Context compiler and inspector)
+- **Last accepted backend version:** 0.6.1 (M6 — Epistemic records and claim-aware context)
 - **M5 implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5
 - **M5 candidate verification commit and release tag target:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec (`backend-v0.5.0`)
 - **M5 acceptance:** Accepted on 2026-11-12 after CI, user-reported Windows verification, and independent GitHub verification of the annotated `backend-v0.5.0` tag target. The tag points to `31ad365f2a94bbe69bed5772dd34449c5fd758ec`.
+- **M6 acceptance:** Accepted on 2026-11-12 after CI (77 passed), user-reported Windows verification (all tests passed), and independent verification of both annotated tag targets. `backend-v0.6.0` points to failed candidate `d99a52e014e2471fe14e2e65892163871f810f42`; `backend-v0.6.1` points to passing candidate `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
 - **Failed-candidate tag:** `backend-v0.4.0` → 41ae1363fd2ceb79fa9e117b1d237d4db526dc84.
 - **Accepted tag:** `backend-v0.4.1` → f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
 - **M2 acceptance:** Accepted on 2026-11-11. Both `backend-v0.2.0` (failed candidate) and `backend-v0.2.1` (passing candidate) were created and independently verified against their exact commit targets.
@@ -112,17 +113,18 @@
 - **Deferred:** epistemic sources (M6), model-specific context profiles, model-based ranking, embeddings, vector search, background memory curation, agents and LangGraph (M7).
 - **Acceptance:** ACCEPTED on 2026-11-12 — implementation, CI, user-reported Windows verification, and release tag verified.
 
-### M6 — Epistemic records and claim-aware context (candidate; Windows verification and tags pending)
+### M6 — Epistemic records and claim-aware context (accepted)
 
 - **Current candidate version:** 0.6.1.
 - **Failed candidate version:** 0.6.0; latest failed candidate commit `d99a52e014e2471fe14e2e65892163871f810f42` (CI run #43285511530 failed because same-second event timestamps plus random UUID ordering selected the wrong latest status/assessment).
 - **Candidate verification commit:** `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
 - **CI:** PASS — [Backend CI #43285806228](https://github.com/KRMRGold/SMH-Tree/actions/runs/43285806228), Python 3.12, 77 passed in 4.94s.
-- **Windows verification:** NOT RUN — awaiting user-run `uv run pytest` from `backend/`.
-- **Release tags:** Pending. Preserve failed `backend-v0.6.0` at `d99a52e014e2471fe14e2e65892163871f810f42`; create passing `backend-v0.6.1` at `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
+- **Windows verification:** PASS — user-reported Windows `uv run pytest`; all tests passed on the updated `main` checkout.
+- **Failed-candidate tag:** `backend-v0.6.0` verified as an annotated tag pointing to `d99a52e014e2471fe14e2e65892163871f810f42`.
+- **Accepted release tag:** `backend-v0.6.1` verified as an annotated tag pointing to `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
+- **Acceptance:** ACCEPTED on 2026-11-12 — CI, user-reported Windows verification, and both tag targets verified.
 - **Implemented:** source registration with metadata/hash validation; immutable claims and source records; provenance `derived_from` links; append-only scoped status events, assessments, evidence, and relations; per-dimension assessment projection; project/global visibility; contradiction relations and contested-partner context bundles; open-question state transitions; claim FTS; unified search over claims, active memory, and branch-visible messages; claim-aware context compilation with a 20% claim budget.
 - **Migration:** 0005 adds claim FTS, search/scope indexes, and database-enforced append-only invariants. Existing migration 0001 was not rewritten.
-- **Acceptance:** Candidate implementation and CI pass. M6 remains unaccepted until Windows verification and both version tags are completed.
 
 ## Architecture and invariants
 
@@ -138,7 +140,7 @@
 ## Known limitations
 
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
-- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are accepted in backend 0.5.0. M6 epistemic records and claim-aware context are implemented as candidate backend 0.6.1; Windows verification and release tags remain pending.
+- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are accepted in backend 0.5.0. M6 epistemic records and claim-aware context are accepted in backend 0.6.1.
 - No desktop shell or packaging yet (M8–M9).
 - M0's candidate tag was intentionally omitted with user acceptance.
 - Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M9 work.
@@ -189,21 +191,20 @@
 - **backend 0.0.2:** failed because the health test still expected version 0.0.1 after the version bump; 14 passed, 1 failed.
 - **backend 0.0.3:** repaired test-client dependency and version assertion; 15 passed on Python 3.12. Accepted as M0 with the user-approved tag exception.
 
-## Current accepted milestone — M5
+## Current accepted milestone — M6
 
-- **Accepted version:** backend 0.5.0.
-- **Implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
-- **Candidate verification commit / annotated tag target:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec.
-- **Accepted tag:** `backend-v0.5.0`; its GitHub ref and annotated tag object were independently fetched and verified against the target commit.
-- **CI:** PASS — Backend CI #64, 64 passed in 2.98s.
-- **Windows:** PASS — user-reported `uv run pytest`, 64 passed in 9.69s.
-- **Next milestone:** M6 — Epistemic records.
+- **Accepted version:** backend 0.6.1.
+- **Implementation / annotated tag target:** `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
+- **Accepted tag:** `backend-v0.6.1`; its GitHub ref and annotated tag object were independently fetched and verified against the target commit.
+- **Failed-candidate tag:** `backend-v0.6.0` → `d99a52e014e2471fe14e2e65892163871f810f42`.
+- **CI:** PASS — Backend CI #43285806228, 77 passed in 4.94s.
+- **Windows:** PASS — user-reported `uv run pytest`; all tests passed.
+- **Next milestone:** M7 — bounded LangGraph workflows for chat and explicitly triggered, provenance-preserving claim extraction. Argument/premise graphs and autonomous curation remain deferred.
 
 ## Current work and next steps
 
-- **Current accepted milestone:** M5 — Context compiler and inspector (backend 0.5.0).
-- **Current candidate milestone:** M6 — Epistemic records and claim-aware context (backend 0.6.1).
+- **Current accepted milestone:** M6 — Epistemic records and claim-aware context (backend 0.6.1).
 - **M5 decisions:** deterministic compiler; M4 permissions and branch-history resolution reused; current user message is head-and-tail truncated only when mandatory system + user content exceeds budget; system instructions are never truncated; one immutable snapshot per successfully compiled chat run; inspector reads the stored packet rather than recompiling.
-- **M6 remaining acceptance steps:** user-run `uv run pytest` from `backend/`; create failed tag `backend-v0.6.0` at `d99a52e014e2471fe14e2e65892163871f810f42`; create passing tag `backend-v0.6.1` at `0f3b8bdf0a321fb20a9f41f6797812e648b73187`; then update this record to accepted.
-- **M6 deferred:** model-based claim extraction, argument/premise graphs, automated truth judgment, background curation, graph database, and LangGraph (M7).
+- **M6 acceptance complete:** CI, user-run Windows tests, and both annotated release tags are verified.
+- **M7 scope agreed:** LangGraph `chat_turn` and explicit `extract_claims` workflows, SQLite checkpointing, safe structured-output validation, idempotent provenance persistence, and a feature flag. Implementation and verification have not yet begun.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
