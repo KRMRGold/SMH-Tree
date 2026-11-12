@@ -393,6 +393,87 @@ def create_app(
             connection.close()
 
 
+    @app.post(
+        "/v1/runs/{run_id}/resume",
+        dependencies=[Depends(require_token)],
+    )
+    async def post_resume_run(
+        run_id: str,
+        x_provider_api_key: str | None = Header(default=None, alias="X-Provider-API-Key"),
+    ):
+        if not runtime_settings.workflows_enabled:
+            raise HTTPException(status_code=503, detail={
+                "code": "workflows_disabled", "message": "LangGraph workflows are disabled."
+            })
+        connection = connect_db(app.state.database_path)
+        try:
+            run = run_repo.get_run(connection, run_id)
+            if run is None:
+                raise not_found("Run not found.")
+            if run["kind"] not in {"chat_turn", "extract_claims"}:
+                raise HTTPException(status_code=422, detail={
+                    "code": "unsupported_run_kind", "message": "This run kind cannot be resumed."
+                })
+            if run["status"] == "succeeded":
+                raise HTTPException(status_code=409, detail={
+                    "code": "run_already_succeeded", "message": "A succeeded run cannot be resumed."
+                })
+            run_input = run.get("input_json") or {}
+            provider_id = str(run_input.get("provider", ""))
+            provider = app.state.providers.get(provider_id)
+            if provider is None:
+                raise not_found("The run's provider is not available.")
+            if provider.is_remote and not bool(run.get("allow_remote")):
+                raise HTTPException(status_code=403, detail={
+                    "code": "remote_not_allowed", "message": "Remote transmission was not authorized for this run."
+                })
+            with connection:
+                connection.execute(
+                    "UPDATE runs SET status='running', error=NULL, finished_at=NULL WHERE id=?",
+                    (run_id,),
+                )
+            if run["kind"] == "chat_turn":
+                async def resumed_event_stream():
+                    try:
+                        async for event, data in workflow_service.stream_chat_workflow(
+                            str(app.state.database_path), connection, provider, None,
+                            provider_label=provider.label, provider_is_remote=provider.is_remote,
+                            api_key=x_provider_api_key,
+                            max_input_tokens=runtime_settings.default_max_input_tokens,
+                            reserve_output_tokens=runtime_settings.default_reserve_output_tokens,
+                            resume_run_id=run_id,
+                        ):
+                            yield f"event: {event}\\ndata: {json.dumps(data, separators=(',', ':'))}\\n\\n"
+                    except Exception as exc:
+                        yield f"event: error\\ndata: {json.dumps({'run_id': run_id, 'code': 'workflow_error', 'message': (str(exc) or 'Workflow failed.')[:500]}, separators=(',', ':'))}\\n\\n"
+                    finally:
+                        connection.close()
+                return StreamingResponse(
+                    resumed_event_stream(), media_type="text/event-stream",
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+                )
+            result = await workflow_service.run_extraction_workflow(
+                str(app.state.database_path), connection, provider, None,
+                provider_label=provider.label, api_key=x_provider_api_key,
+                resume_run_id=run_id,
+            )
+            return result
+        except LookupError as exc:
+            raise not_found(str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_workflow_output", "message": str(exc)
+            }) from exc
+        except ProviderError as exc:
+            raise HTTPException(status_code=502, detail={
+                "code": "provider_error", "message": str(exc)
+            }) from exc
+        finally:
+            # Streaming responses own the connection until the generator closes.
+            if not (run is not None and run.get("kind") == "chat_turn" and run.get("status") != "succeeded"):
+                connection.close()
+
+
     @app.get("/v1/memory", dependencies=[Depends(require_token)])
     def get_memory_items(
         q: str | None = Query(default=None, max_length=500),
