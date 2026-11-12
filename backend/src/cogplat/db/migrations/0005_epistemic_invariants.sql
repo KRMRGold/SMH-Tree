@@ -20,6 +20,8 @@ CREATE TRIGGER claims_fts_update AFTER UPDATE ON claims BEGIN
     INSERT INTO claims_fts(rowid, text) VALUES (new.rowid, new.text);
 END;
 
+INSERT INTO claims_fts(claims_fts) VALUES ('rebuild');
+
 CREATE INDEX idx_claims_project_created ON claims(project_id, created_at, id);
 CREATE INDEX idx_sources_project_created ON sources(project_id, created_at, id);
 CREATE INDEX idx_claim_status_scope_latest
