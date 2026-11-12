@@ -28,8 +28,8 @@ def test_health_requires_a_valid_bearer_token(tmp_path):
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
-        "version": "0.5.0",
-        "schema_version": 4,
+        "version": "0.6.0",
+        "schema_version": 5,
         "capabilities": {
             "sqlite": True,
             "sqlite_fts5": True,
@@ -37,6 +37,7 @@ def test_health_requires_a_valid_bearer_token(tmp_path):
             "chat": True,
             "streaming": True,
             "memory": True,
+            "epistemic": True,
         },
     }
 
