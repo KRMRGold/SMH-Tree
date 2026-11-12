@@ -5,13 +5,13 @@ import sqlite3
 from cogplat.domain.ids import new_id
 from cogplat.domain.time import utc_now
 
-def record_transmission(connection: sqlite3.Connection, run_id: str, provider_label: str, item_refs: list[str], byte_count: int) -> dict[str, object]:
+def record_transmission(connection: sqlite3.Connection, run_id: str, provider_label: str, item_refs: list[str], byte_count: int, packet_sha256: str | None = None) -> dict[str, object]:
     transmission_id = new_id()
     created_at = utc_now()
     with connection:
         connection.execute(
-            "INSERT INTO remote_transmissions (id, run_id, provider_label, item_refs_json, byte_count, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (transmission_id, run_id, provider_label, json.dumps(item_refs, separators=(",", ":")), byte_count, created_at),
+            "INSERT INTO remote_transmissions (id, run_id, provider_label, item_refs_json, byte_count, created_at, packet_sha256) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (transmission_id, run_id, provider_label, json.dumps(item_refs, separators=(",", ":")), byte_count, created_at, packet_sha256),
         )
     return {"id": transmission_id, "run_id": run_id, "provider_label": provider_label, "item_refs": item_refs, "byte_count": byte_count, "created_at": created_at}
 
