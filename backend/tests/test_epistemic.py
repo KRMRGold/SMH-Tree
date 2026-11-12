@@ -68,17 +68,25 @@ def test_status_is_latest_per_scope_and_accepted_requires_policy(tmp_path):
             ClaimStatusCreate(status="accepted")
         epistemic.append_claim_status(
             connection, claim["id"],
-            ClaimStatusCreate(status="contested", scope="default", rationale="Conflicting evidence"),
+            ClaimStatusCreate(status="corroborated", scope="default", rationale="Multiple sources agree"),
             ctx,
         )
         epistemic.append_claim_status(
             connection, claim["id"],
-            ClaimStatusCreate(status="accepted", scope="project:p1", policy="manual-review"),
+            ClaimStatusCreate(status="contested", scope="project:p1", rationale="Project-specific conflict"),
             ctx,
         )
         result = epistemic.get_claim(connection, claim["id"], ctx)
         statuses = {item["scope"]: item["status"] for item in result["current_status"]}
-        assert statuses == {"default": "contested", "project:p1": "accepted"}
+        assert statuses == {"default": "corroborated", "project:p1": "contested"}
+
+        accepted = epistemic.create_claim(connection, claim_payload("Policy accepted claim"))
+        epistemic.append_claim_status(
+            connection, accepted["id"],
+            ClaimStatusCreate(status="accepted", policy="manual-review"),
+            ctx,
+        )
+        assert epistemic.get_claim(connection, accepted["id"], ctx)["current_status"][0]["status"] == "accepted"
     finally:
         connection.close()
 
