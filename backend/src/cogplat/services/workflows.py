@@ -14,6 +14,7 @@ os.environ.setdefault("LANGGRAPH_STRICT_MSGPACK", "true")
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.config import get_stream_writer
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -230,6 +231,7 @@ async def stream_chat_workflow(
     connection.close()
     async with AsyncSqliteSaver.from_conn_string(database_path) as saver:
         await saver.setup()
+        saver.serde = JsonPlusSerializer(allowed_msgpack_modules=None)
         connection = connect_db(database_path)
         graph = build_chat_graph(
             connection, provider, provider_label=provider_label,
@@ -421,6 +423,7 @@ async def run_extraction_workflow(
     connection.close()
     async with AsyncSqliteSaver.from_conn_string(database_path) as saver:
         await saver.setup()
+        saver.serde = JsonPlusSerializer(allowed_msgpack_modules=None)
         connection = connect_db(database_path)
         graph = build_extraction_graph(
             connection, provider, provider_label=provider_label, api_key=api_key
