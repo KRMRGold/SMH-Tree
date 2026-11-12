@@ -17,6 +17,10 @@ from cogplat.db.connection import apply_migrations, connect_db
 from cogplat.domain.chat import ChatRequest
 from cogplat.domain.context import ContextCompileError
 from cogplat.domain.memory import MemoryCreate, MemoryLifecycleUpdate
+from cogplat.domain.epistemic import (
+    ClaimAssessmentCreate, ClaimCreate, ClaimRelationCreate, ClaimStatusCreate,
+    EvidenceCreate, OpenQuestionCreate, OpenQuestionUpdate, SourceCreate,
+)
 from cogplat.domain.conversation import (
     BranchFork,
     ConversationCreate,
@@ -31,6 +35,7 @@ from cogplat.repos import transmissions as transmission_repo
 from cogplat.services import chat as chat_service
 from cogplat.services import conversations as conversation_service
 from cogplat.services import memory as memory_service
+from cogplat.services import epistemic as epistemic_service
 from cogplat.services.permissions import InvalidAccessContext, build_access_context
 
 
@@ -382,6 +387,187 @@ def create_app(
         except memory_service.InvalidMemoryTransition as exc:
             raise HTTPException(status_code=409, detail={
                 "code": "invalid_memory_transition", "message": str(exc)
+            }) from exc
+
+
+
+    @app.get("/v1/sources", dependencies=[Depends(require_token)])
+    def get_sources(
+        project_id: str | None = Query(default=None),
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            return {"items": epistemic_service.list_sources(connection, context, limit, offset)}
+        except InvalidAccessContext as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_epistemic_context", "message": str(exc)
+            }) from exc
+
+    @app.post("/v1/sources", status_code=201, dependencies=[Depends(require_token)])
+    def post_source(payload: SourceCreate, connection=Depends(open_database)):
+        try:
+            return epistemic_service.create_source(connection, payload)
+        except epistemic_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+        except epistemic_service.InvalidEpistemicRecord as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_epistemic_record", "message": str(exc)
+            }) from exc
+
+    @app.get("/v1/claims", dependencies=[Depends(require_token)])
+    def get_claims(
+        q: str | None = Query(default=None, max_length=500),
+        project_id: str | None = Query(default=None),
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            return {"items": epistemic_service.list_claims(
+                connection, context, query=q, limit=limit, offset=offset
+            )}
+        except InvalidAccessContext as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_epistemic_context", "message": str(exc)
+            }) from exc
+
+    @app.post("/v1/claims", status_code=201, dependencies=[Depends(require_token)])
+    def post_claim(payload: ClaimCreate, connection=Depends(open_database)):
+        try:
+            return epistemic_service.create_claim(connection, payload)
+        except epistemic_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+
+    @app.get("/v1/claims/{claim_id}", dependencies=[Depends(require_token)])
+    def get_claim(
+        claim_id: str,
+        project_id: str | None = Query(default=None),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            return epistemic_service.get_claim(connection, claim_id, context)
+        except (epistemic_service.ResourceNotFound, InvalidAccessContext) as exc:
+            raise not_found(str(exc)) from exc
+
+    @app.post("/v1/claims/{claim_id}/status", status_code=201, dependencies=[Depends(require_token)])
+    def post_claim_status(
+        claim_id: str,
+        payload: ClaimStatusCreate,
+        project_id: str | None = Query(default=None),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            return epistemic_service.append_claim_status(connection, claim_id, payload, context)
+        except epistemic_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+        except (epistemic_service.InvalidEpistemicRecord, InvalidAccessContext) as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_epistemic_record", "message": str(exc)
+            }) from exc
+
+    @app.post("/v1/claims/{claim_id}/assessments", status_code=201, dependencies=[Depends(require_token)])
+    def post_claim_assessment(
+        claim_id: str,
+        payload: ClaimAssessmentCreate,
+        project_id: str | None = Query(default=None),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            return epistemic_service.append_claim_assessment(connection, claim_id, payload, context)
+        except epistemic_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+        except InvalidAccessContext as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_epistemic_context", "message": str(exc)
+            }) from exc
+
+    @app.post("/v1/claims/{claim_id}/evidence", status_code=201, dependencies=[Depends(require_token)])
+    def post_claim_evidence(
+        claim_id: str,
+        payload: EvidenceCreate,
+        project_id: str | None = Query(default=None),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            return epistemic_service.add_evidence(connection, claim_id, payload, context)
+        except epistemic_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+        except InvalidAccessContext as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_epistemic_context", "message": str(exc)
+            }) from exc
+
+    @app.post("/v1/claims/{claim_id}/relations", status_code=201, dependencies=[Depends(require_token)])
+    def post_claim_relation(
+        claim_id: str,
+        payload: ClaimRelationCreate,
+        project_id: str | None = Query(default=None),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            return epistemic_service.add_relation(connection, claim_id, payload, context)
+        except epistemic_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+        except (epistemic_service.InvalidEpistemicRecord, InvalidAccessContext) as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_epistemic_record", "message": str(exc)
+            }) from exc
+
+    @app.get("/v1/open-questions", dependencies=[Depends(require_token)])
+    def get_open_questions(
+        project_id: str | None = Query(default=None),
+        state: str | None = Query(default=None),
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            if state is not None and state not in {"open", "investigating", "answered", "dropped"}:
+                raise HTTPException(status_code=422, detail={
+                    "code": "invalid_question_state", "message": "Unknown open-question state."
+                })
+            return {"items": epistemic_service.list_open_questions(
+                connection, context, state, limit, offset
+            )}
+        except InvalidAccessContext as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_epistemic_context", "message": str(exc)
+            }) from exc
+
+    @app.post("/v1/open-questions", status_code=201, dependencies=[Depends(require_token)])
+    def post_open_question(payload: OpenQuestionCreate, connection=Depends(open_database)):
+        try:
+            return epistemic_service.create_open_question(connection, payload)
+        except epistemic_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+
+    @app.patch("/v1/open-questions/{question_id}", dependencies=[Depends(require_token)])
+    def patch_open_question(
+        question_id: str,
+        payload: OpenQuestionUpdate,
+        project_id: str | None = Query(default=None),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(connection, project_id=project_id)
+            return epistemic_service.update_open_question(
+                connection, question_id, payload, context
+            )
+        except epistemic_service.ResourceNotFound as exc:
+            raise not_found(str(exc)) from exc
+        except (epistemic_service.InvalidEpistemicRecord, InvalidAccessContext) as exc:
+            raise HTTPException(status_code=409, detail={
+                "code": "invalid_question_transition", "message": str(exc)
             }) from exc
 
     @app.get("/v1/transmissions", dependencies=[Depends(require_token)])
