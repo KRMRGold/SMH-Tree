@@ -218,7 +218,7 @@ def build_chat_graph(
 
 
 async def stream_chat_workflow(
-    database_path: str, connection: sqlite3.Connection,
+    database_path: str, checkpoint_path: str, connection: sqlite3.Connection,
     provider: ModelProvider, initial_state: dict[str, object] | None, *,
     provider_label: str, provider_is_remote: bool, api_key: str | None,
     max_input_tokens: int, reserve_output_tokens: int,
@@ -229,7 +229,7 @@ async def stream_chat_workflow(
     config = {"configurable": {"thread_id": run_id}}
     connection.commit()
     connection.close()
-    async with AsyncSqliteSaver.from_conn_string(database_path) as saver:
+    async with AsyncSqliteSaver.from_conn_string(checkpoint_path) as saver:
         await saver.setup()
         saver.serde = JsonPlusSerializer(allowed_msgpack_modules=None)
         connection = connect_db(database_path)
@@ -412,7 +412,7 @@ def build_extraction_graph(
 
 
 async def run_extraction_workflow(
-    database_path: str, connection: sqlite3.Connection,
+    database_path: str, checkpoint_path: str, connection: sqlite3.Connection,
     provider: ModelProvider, initial_state: dict[str, object] | None, *,
     provider_label: str, api_key: str | None,
     resume_run_id: str | None = None,
@@ -421,7 +421,7 @@ async def run_extraction_workflow(
     config = {"configurable": {"thread_id": run_id}}
     connection.commit()
     connection.close()
-    async with AsyncSqliteSaver.from_conn_string(database_path) as saver:
+    async with AsyncSqliteSaver.from_conn_string(checkpoint_path) as saver:
         await saver.setup()
         saver.serde = JsonPlusSerializer(allowed_msgpack_modules=None)
         connection = connect_db(database_path)
