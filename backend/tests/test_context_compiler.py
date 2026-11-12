@@ -232,3 +232,37 @@ def test_history_keeps_newest_messages_and_marks_older_omissions(tmp_path):
         assert packet.token_estimate <= packet.input_budget
     finally:
         connection.close()
+
+
+def test_remote_sharing_setting_allows_only_the_enabled_global_scope(tmp_path):
+    connection = make_db(tmp_path / "remote-sharing.db")
+    try:
+        branch_id = setup_branch(connection)
+        global_item = memory_service.create_memory(
+            connection, MemoryCreate(scope="global", kind="preference", content="Shared global setting", importance=5)
+        )
+        user_item = memory_service.create_memory(
+            connection, MemoryCreate(scope="user", kind="preference", content="Private user setting", importance=5)
+        )
+        connection.execute(
+            "INSERT INTO settings(key, value_json, updated_at) VALUES ('share_global_memory_remote', 'true', '2026-01-01T00:00:00Z')"
+        )
+        req = CompileRequest(
+            access_context=build_access_context(connection, branch_id=branch_id, allow_remote=True),
+            current_user_message="Use the shared setting",
+            current_user_message_id="current",
+            history=[],
+            provider_id="remote",
+            provider_label="Remote",
+            provider_is_remote=True,
+            model="test-model",
+            max_input_tokens=2048,
+            reserve_output_tokens=256,
+        )
+        packet = context_compiler.compile_context(connection, req)
+        assert global_item["id"] in packet.source_refs
+        assert user_item["id"] not in packet.source_refs
+        excluded = {item["ref"]: item["reason"] for item in packet.excluded_sources}
+        assert excluded[user_item["id"]] == "remote_sharing_disabled"
+    finally:
+        connection.close()
