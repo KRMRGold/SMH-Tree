@@ -21,4 +21,20 @@ def authorize_and_audit(connection: sqlite3.Connection, run: dict[str, object], 
     if not bool(run.get("allow_remote", False)):
         raise RemoteNotAllowed("Remote transmission is disabled for this run.")
     packet = json.dumps([message.model_dump() for message in messages], ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    transmission_repo.record_transmission(connection, str(run["id"]), provider.label, [str(ref) for ref in item_refs], len(packet))
+    run_id = str(run["id"])
+    refs = [str(ref) for ref in item_refs]
+    existing = connection.execute(
+        "SELECT provider_label, item_refs_json, byte_count FROM remote_transmissions WHERE run_id = ?",
+        (run_id,),
+    ).fetchone()
+    if existing is not None:
+        if (
+            str(existing["provider_label"]) != provider.label
+            or json.loads(str(existing["item_refs_json"])) != refs
+            or int(existing["byte_count"]) != len(packet)
+        ):
+            raise RemoteNotAllowed("A retry attempted to change the previously audited remote packet.")
+        return
+    transmission_repo.record_transmission(
+        connection, run_id, provider.label, refs, len(packet)
+    )
