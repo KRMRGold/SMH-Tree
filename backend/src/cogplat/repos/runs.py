@@ -70,6 +70,13 @@ def finish_run(
     )
 
 
+def update_run_input(connection: sqlite3.Connection, run_id: str, input_data: dict[str, object]) -> None:
+    connection.execute(
+        "UPDATE runs SET input_json = ? WHERE id = ?",
+        (json.dumps(input_data, separators=(",", ":")), run_id),
+    )
+
+
 def get_run(connection: sqlite3.Connection, run_id: str) -> dict[str, object] | None:
     row = connection.execute(
         "SELECT id, kind, conversation_id, branch_id, status, allow_remote, input_json, "
