@@ -75,28 +75,35 @@ def create_claim(connection: sqlite3.Connection, payload: ClaimCreate):
     origin_target = {
         "user": "message",
         "agent": "run",
-        "extraction": "message",
         "import": "source",
-    }[payload.origin_kind]
+    }.get(payload.origin_kind)
     if payload.origin_ref is not None:
-        table = {"message": "messages", "run": "runs", "source": "sources"}[origin_target]
-        if origin_target == "message":
-            origin = connection.execute(
-                "SELECT c.project_id FROM messages m JOIN branches b ON b.id = m.branch_id "
-                "JOIN conversations c ON c.id = b.conversation_id WHERE m.id = ?",
-                (payload.origin_ref,),
-            ).fetchone()
-        elif origin_target == "run":
-            origin = connection.execute(
-                "SELECT c.project_id FROM runs r LEFT JOIN conversations c ON c.id = r.conversation_id "
-                "WHERE r.id = ?", (payload.origin_ref,)
-            ).fetchone()
-        else:
-            origin = connection.execute(
-                "SELECT project_id FROM sources WHERE id = ?", (payload.origin_ref,)
-            ).fetchone()
-        if origin is None:
-            raise ResourceNotFound(f"Origin {origin_target} not found.")
+        candidate_targets = [origin_target] if origin_target else ["message", "run"]
+        origin = None
+        resolved_target = None
+        for candidate in candidate_targets:
+            if candidate == "message":
+                row = connection.execute(
+                    "SELECT c.project_id FROM messages m JOIN branches b ON b.id = m.branch_id "
+                    "JOIN conversations c ON c.id = b.conversation_id WHERE m.id = ?",
+                    (payload.origin_ref,),
+                ).fetchone()
+            elif candidate == "run":
+                row = connection.execute(
+                    "SELECT c.project_id FROM runs r LEFT JOIN conversations c ON c.id = r.conversation_id "
+                    "WHERE r.id = ?", (payload.origin_ref,)
+                ).fetchone()
+            else:
+                row = connection.execute(
+                    "SELECT project_id FROM sources WHERE id = ?", (payload.origin_ref,)
+                ).fetchone()
+            if row is not None:
+                if origin is not None:
+                    raise InvalidEpistemicRecord("Origin reference is ambiguous across record types.")
+                origin, resolved_target = row, candidate
+        if origin is None or resolved_target is None:
+            raise ResourceNotFound("Origin record not found.")
+        origin_target = resolved_target
         origin_project = origin["project_id"]
         if origin_project is not None and origin_project != payload.project_id:
             raise ResourceNotFound(f"Origin {origin_target} is outside the claim's project scope.")
