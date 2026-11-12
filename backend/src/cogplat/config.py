@@ -19,6 +19,7 @@ class Settings:
     openai_compat_base_url: str = "https://api.openai.com/v1"
     default_max_input_tokens: int = 8192
     default_reserve_output_tokens: int = 1024
+    workflows_enabled: bool = True
 
 
 def resolve_data_dir(
@@ -66,6 +67,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         ),
         default_max_input_tokens=int(env.get("COGPLAT_DEFAULT_MAX_INPUT_TOKENS", "8192")),
         default_reserve_output_tokens=int(env.get("COGPLAT_DEFAULT_RESERVE_OUTPUT_TOKENS", "1024")),
+        workflows_enabled=env.get("COGPLAT_WORKFLOWS_ENABLED", "true").strip().lower() not in {"0", "false", "no", "off"},
     )
 
 
