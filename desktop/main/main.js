@@ -1,4 +1,5 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } from "electron";
+import { readFile, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { BackendSupervisor } from "./backend-supervisor.js";
@@ -9,6 +10,31 @@ const desktopRoot = path.resolve(here, "..");
 const repositoryRoot = path.resolve(desktopRoot, "..");
 const rendererPath = path.join(desktopRoot, "renderer/index.html");
 const rendererUrl = pathToFileURL(rendererPath).href;
+const providerKeysPath = path.join(app.getPath("userData"), "provider-keys.enc");
+
+async function readProviderKeys() {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error("OS-backed secure storage is unavailable.");
+  try {
+    const encrypted = await readFile(providerKeysPath);
+    return JSON.parse(safeStorage.decryptString(encrypted));
+  } catch (error) {
+    if (error.code === "ENOENT") return {};
+    throw error;
+  }
+}
+function validProviderId(value) {
+  if (typeof value !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(value)) throw new Error("Invalid provider identifier.");
+  return value;
+}
+async function providerKey(providerId) {
+  if (!providerId) return null;
+  const keys = await readProviderKeys();
+  return keys[validProviderId(providerId)] ?? null;
+}
+async function writeProviderKeys(keys) {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error("OS-backed secure storage is unavailable.");
+  await writeFile(providerKeysPath, safeStorage.encryptString(JSON.stringify(keys)), { mode: 0o600 });
+}
 const allowedExternalHosts = new Set([
   "github.com",
   "ollama.com",
@@ -64,6 +90,31 @@ function requestMethod(request, allowDelete = true) {
 }
 
 function registerIpcHandlers() {
+  ipcMain.handle("cog:set-provider-api-key", async (event, payload) => {
+    assertTrustedSender(event);
+    const providerId = validProviderId(payload?.providerId);
+    const value = payload?.value;
+    if (typeof value !== "string" || value.length > 8000) throw new Error("Invalid API key value.");
+    const keys = await readProviderKeys();
+    if (value.trim()) keys[providerId] = value.trim();
+    else delete keys[providerId];
+    await writeProviderKeys(keys);
+    return true;
+  });
+  ipcMain.handle("cog:delete-provider-api-key", async (event, providerId) => {
+    assertTrustedSender(event);
+    const keys = await readProviderKeys();
+    delete keys[validProviderId(providerId)];
+    if (Object.keys(keys).length) await writeProviderKeys(keys);
+    else await unlink(providerKeysPath).catch((error) => { if (error.code !== "ENOENT") throw error; });
+    return true;
+  });
+  ipcMain.handle("cog:has-provider-api-key", async (event, providerId) => {
+    assertTrustedSender(event);
+    const keys = await readProviderKeys();
+    return Boolean(keys[validProviderId(providerId)]);
+  });
+
   ipcMain.handle("cog:get-api-base", (event) => {
     assertTrustedSender(event);
     return supervisor.connection?.baseUrl ?? null;
@@ -77,6 +128,8 @@ function registerIpcHandlers() {
     const url = buildApiUrl(connection, request?.path);
     const method = requestMethod(request);
     const headers = { Authorization: `Bearer ${connection.token}` };
+    const apiKey = await providerKey(request?.providerId);
+    if (apiKey) headers["X-Provider-API-Key"] = apiKey;
     const options = { method, headers, signal: AbortSignal.timeout(30_000) };
     if (request.body !== undefined) {
       headers["Content-Type"] = "application/json";
@@ -115,6 +168,8 @@ function registerIpcHandlers() {
         const url = buildApiUrl(connection, request?.path);
         const method = requestMethod(request, false);
         const headers = { Authorization: `Bearer ${connection.token}` };
+        const apiKey = await providerKey(request?.providerId);
+        if (apiKey) headers["X-Provider-API-Key"] = apiKey;
         const options = { method, headers, signal: controller.signal };
         if (request?.body !== undefined) {
           headers["Content-Type"] = "application/json";
