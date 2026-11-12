@@ -100,7 +100,7 @@
 
         <section id="settings-panel" class="data-panel" hidden>
           <header class="panel-heading"><div><div class="eyebrow">LOCAL CONFIGURATION</div><h2>Settings</h2></div><button type="button" id="refresh-settings" class="secondary-button">Refresh</button></header>
-          <section class="settings-section"><h3>Provider credentials</h3><p class="panel-note">Keys are encrypted by the operating system and stored outside SQLite. They are sent only with requests for the selected provider.</p>
+          <section class="settings-section"><h3>Provider credentials</h3><p id="secure-storage-status" class="record-meta">Checking OS secure storage…</p><p class="panel-note">Keys are encrypted by the operating system and stored outside SQLite. They are sent only with requests for the selected provider.</p>
             <label class="settings-field">Provider <select id="key-provider"></select></label>
             <label class="settings-field">API key <input id="provider-api-key" type="password" autocomplete="new-password" placeholder="Enter a key to replace the saved key"></label>
             <div class="settings-actions"><button type="button" id="save-provider-key" class="primary-button">Save key</button><button type="button" id="delete-provider-key" class="secondary-button">Delete saved key</button><span id="provider-key-status" class="record-meta"></span></div>
