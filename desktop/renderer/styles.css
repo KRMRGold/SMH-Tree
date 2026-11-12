@@ -191,3 +191,5 @@ h1 { margin: 6px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em;
 .contradiction-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
 .contradiction-pair .record-card { min-width:0; }
 @media (max-width: 760px) { .contradiction-pair { grid-template-columns:1fr; } }
+
+.data-path { display:block; margin-top:10px; padding:10px; border:1px solid var(--line); border-radius:8px; color:#d2c5df; font-size:11px; overflow-wrap:anywhere; }
