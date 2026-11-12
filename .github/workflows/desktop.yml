@@ -50,6 +50,7 @@ jobs:
         run: |
           node --check main/main.js
           node --check main/backend-supervisor.js
+          node --check main/sse-parser.js
           node --check preload/preload.js
           node --check renderer/renderer.js
 
