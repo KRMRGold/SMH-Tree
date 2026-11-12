@@ -258,6 +258,8 @@ def compile_context(
             for entry in selected_history
         ] + [message]) <= input_budget:
             selected_history.append(item)
+        else:
+            break
 
     omitted_history = len(history) - len(selected_history)
     marker_message: ChatMessage | None = None
