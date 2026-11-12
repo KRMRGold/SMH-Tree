@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { BackendSupervisor } from "./backend-supervisor.js";
+import { createSseParser } from "./sse-parser.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(here, "..");
@@ -134,36 +135,17 @@ function registerIpcHandlers() {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = "";
-
-        const emitFrame = (frame) => {
-          let eventName = "message";
-          const dataLines = [];
-          for (const line of frame.split(/\\r\\n|\\n|\\r/)) {
-            if (line.startsWith("event:")) eventName = line.slice(6).trim();
-            else if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart());
-          }
-          if (!dataLines.length) return;
-          const rawData = dataLines.join("\\n");
-          let data = rawData;
-          try { data = JSON.parse(rawData); } catch { /* Keep raw event data. */ }
+        const parser = createSseParser((eventName, data) => {
           port.postMessage({ type: "event", event: eventName, data });
-        };
+        });
 
         while (!controller.signal.aborted) {
           const { value, done } = await reader.read();
           if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          let boundary;
-          while ((boundary = buffer.search(/\\r?\\n\\r?\\n/)) !== -1) {
-            const frame = buffer.slice(0, boundary);
-            const separator = buffer.slice(boundary).match(/^\\r?\\n\\r?\\n/)[0];
-            buffer = buffer.slice(boundary + separator.length);
-            emitFrame(frame);
-          }
+          parser.push(decoder.decode(value, { stream: true }));
         }
-        buffer += decoder.decode();
-        if (buffer.trim()) emitFrame(buffer);
+        parser.push(decoder.decode());
+        parser.end();
         if (!controller.signal.aborted) port.postMessage({ type: "done" });
       } catch (error) {
         if (!controller.signal.aborted) {
