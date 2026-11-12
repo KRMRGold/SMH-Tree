@@ -1,3 +1,15 @@
+## M6 candidate verification — backend 0.6.1 (not yet accepted)
+
+- **Candidate version:** backend 0.6.1.
+- **Failed prior candidate:** backend 0.6.0, last failed candidate commit `d99a52e014e2471fe14e2e65892163871f810f42`; [Backend CI #43285511530](https://github.com/KRMRGold/SMH-Tree/actions/runs/43285511530) exposed incorrect latest-event ordering when multiple UUIDv7 records shared a second-level timestamp. The repaired query uses SQLite insertion order (`rowid DESC`) for append-only status and assessment event streams.
+- **Candidate verification commit:** `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
+- **Run date:** 2026-11-12 UTC.
+- **Automated CI:** PASS — [Backend CI #43285806228](https://github.com/KRMRGold/SMH-Tree/actions/runs/43285806228), Python 3.12, 77 passed in 4.94s.
+- **Coverage added:** claim/source registration and scope; origin `derived_from` links to messages, runs, and sources; status policy and latest-per-scope projection; corroborated/default versus contested/project status; independent latest assessment per dimension; evidence/source visibility; directional contradiction relations and contradiction basis; append-only triggers; project/global access filtering including linked-record leakage prevention; open-question transitions; claim FTS; unified branch-aware search; contested-claim context with contradiction partner; M0–M5 regression suite.
+- **Windows verification:** NOT RUN — user-run verification is still required.
+- **Release tags:** Pending. Create failed `backend-v0.6.0` at `d99a52e014e2471fe14e2e65892163871f810f42`; create passing `backend-v0.6.1` at `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
+- **Acceptance status:** CANDIDATE — CI passed; Windows verification and release tags remain outstanding.
+
 # Test Record
 
 ## M5 accepted — context compiler and inspector
