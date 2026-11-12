@@ -65,6 +65,7 @@ def create_app(
         redoc_url=None,
     )
     app.state.database_path = database_path
+    app.state.checkpoint_path = data_dir / "checkpoints.db"
     app.state.providers = dict(providers) if providers is not None else build_registry(runtime_settings)
     bearer = HTTPBearer(auto_error=False)
 
@@ -291,7 +292,7 @@ def create_app(
             async def workflow_event_stream():
                 try:
                     async for event, data in workflow_service.stream_chat_workflow(
-                        str(app.state.database_path), connection, provider, initial_state,
+                        str(app.state.database_path), str(app.state.checkpoint_path), connection, provider, initial_state,
                         provider_label=provider.label, provider_is_remote=provider.is_remote,
                         api_key=x_provider_api_key,
                         max_input_tokens=runtime_settings.default_max_input_tokens,
@@ -376,7 +377,7 @@ def create_app(
                 connection, message_id, payload.provider, payload.model, payload.allow_remote
             )
             return await workflow_service.run_extraction_workflow(
-                str(app.state.database_path), connection, provider, initial_state,
+                str(app.state.database_path), str(app.state.checkpoint_path), connection, provider, initial_state,
                 provider_label=provider.label, api_key=x_provider_api_key,
             )
         except LookupError as exc:
@@ -442,16 +443,16 @@ def create_app(
                 async def resumed_event_stream():
                     try:
                         async for event, data in workflow_service.stream_chat_workflow(
-                            str(app.state.database_path), connection, provider, None,
+                            str(app.state.database_path), str(app.state.checkpoint_path), connection, provider, None,
                             provider_label=provider.label, provider_is_remote=provider.is_remote,
                             api_key=x_provider_api_key,
                             max_input_tokens=runtime_settings.default_max_input_tokens,
                             reserve_output_tokens=runtime_settings.default_reserve_output_tokens,
                             resume_run_id=run_id,
                         ):
-                            yield f"event: {event}\\ndata: {json.dumps(data, separators=(',', ':'))}\\n\\n"
+                            yield f"event: {event}\ndata: {json.dumps(data, separators=(',', ':'))}\n\n"
                     except Exception as exc:
-                        yield f"event: error\\ndata: {json.dumps({'run_id': run_id, 'code': 'workflow_error', 'message': (str(exc) or 'Workflow failed.')[:500]}, separators=(',', ':'))}\\n\\n"
+                        yield f"event: error\ndata: {json.dumps({'run_id': run_id, 'code': 'workflow_error', 'message': (str(exc) or 'Workflow failed.')[:500]}, separators=(',', ':'))}\n\n"
                     finally:
                         connection.close()
                 streaming = True
@@ -460,7 +461,7 @@ def create_app(
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
                 )
             result = await workflow_service.run_extraction_workflow(
-                str(app.state.database_path), connection, provider, None,
+                str(app.state.database_path), str(app.state.checkpoint_path), connection, provider, None,
                 provider_label=provider.label, api_key=x_provider_api_key,
                 resume_run_id=run_id,
             )
