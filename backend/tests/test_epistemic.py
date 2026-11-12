@@ -389,6 +389,26 @@ def test_claim_origin_ref_creates_scoped_derived_from_link_and_validity_dates(tm
         assert claim["valid_from"].startswith("2026-01-01")
         assert claim["valid_to"].startswith("2026-12-31")
 
+        connection.execute(
+            "INSERT INTO runs(id, kind, conversation_id, branch_id, status, created_at) "
+            "VALUES ('extract-run', 'extract_claims', ?, ?, 'succeeded', '2026-01-02T00:00:00Z')",
+            (conversation["id"], conversation["root_branch_id"]),
+        )
+        run_claim = epistemic.create_claim(
+            connection,
+            ClaimCreate(
+                project_id="p1", claim_type="factual",
+                text="A claim derived from an extraction run",
+                origin_kind="extraction", origin_ref="extract-run",
+            ),
+        )
+        run_link = connection.execute(
+            "SELECT * FROM links WHERE from_type = 'claim' AND from_id = ?",
+            (run_claim["id"],),
+        ).fetchone()
+        assert run_link["to_type"] == "run"
+        assert run_link["to_id"] == "extract-run"
+
         other_conversation = conversations.create_conversation(connection, "Other", "p2")
         other_message = conversations.append_message(
             connection, str(other_conversation["root_branch_id"]),
