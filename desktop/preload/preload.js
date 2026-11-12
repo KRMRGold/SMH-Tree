@@ -26,4 +26,7 @@ contextBridge.exposeInMainWorld("cog", Object.freeze({
     return () => channel.port1.close();
   },
   openExternal: (url) => ipcRenderer.invoke("cog:open-external", url),
+  setProviderApiKey: (providerId, value) => ipcRenderer.invoke("cog:set-provider-api-key", { providerId, value }),
+  deleteProviderApiKey: (providerId) => ipcRenderer.invoke("cog:delete-provider-api-key", providerId),
+  hasProviderApiKey: (providerId) => ipcRenderer.invoke("cog:has-provider-api-key", providerId),
 }));
