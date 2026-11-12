@@ -10,6 +10,7 @@ from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query, Reques
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import StrictBool
 
 from cogplat import __version__
 from cogplat.config import Settings, ensure_data_dir, load_settings
@@ -785,7 +786,7 @@ def create_app(
 
     @app.patch("/v1/settings", dependencies=[Depends(require_token)])
     def patch_settings(
-        payload: dict[str, bool] = Body(...),
+        payload: dict[str, StrictBool] = Body(...),
         connection=Depends(open_database),
     ) -> dict[str, object]:
         allowed = {"share_global_memory_remote", "share_user_memory_remote"}
