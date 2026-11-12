@@ -12,6 +12,12 @@ const rendererPath = path.join(desktopRoot, "renderer/index.html");
 const rendererUrl = pathToFileURL(rendererPath).href;
 const providerKeysPath = path.join(app.getPath("userData"), "provider-keys.enc");
 
+function assertSecureStorageAvailable() {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error("OS-backed secure storage is unavailable.");
+  if (safeStorage.getSelectedStorageBackend?.() === "basic_text") {
+    throw new Error("Secure credential storage is unavailable. Configure an OS keyring before saving remote API keys.");
+  }
+}
 async function readProviderKeys() {
   let encrypted;
   try {
@@ -20,7 +26,7 @@ async function readProviderKeys() {
     if (error.code === "ENOENT") return {};
     throw error;
   }
-  if (!safeStorage.isEncryptionAvailable()) throw new Error("OS-backed secure storage is unavailable.");
+  assertSecureStorageAvailable();
   return JSON.parse(safeStorage.decryptString(encrypted));
 }
 function validProviderId(value) {
@@ -33,7 +39,7 @@ async function providerKey(providerId) {
   return keys[validProviderId(providerId)] ?? null;
 }
 async function writeProviderKeys(keys) {
-  if (!safeStorage.isEncryptionAvailable()) throw new Error("OS-backed secure storage is unavailable.");
+  assertSecureStorageAvailable();
   await mkdir(path.dirname(providerKeysPath), { recursive: true });
   const temporaryPath = `${providerKeysPath}.tmp`;
   await writeFile(temporaryPath, safeStorage.encryptString(JSON.stringify(keys)), { mode: 0o600 });
