@@ -19,7 +19,7 @@ from cogplat.services.permissions import build_access_context
 
 def make_db(path):
     connection = connect_db(path)
-    assert apply_migrations(connection) == 5
+    assert apply_migrations(connection) == 6
     return connection
 
 
