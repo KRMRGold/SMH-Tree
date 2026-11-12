@@ -195,3 +195,40 @@ def test_default_token_counter_uses_conservative_estimate():
     counter = DefaultTokenCounter()
     from cogplat.domain.chat import ChatMessage
     assert counter.count_messages([ChatMessage(role="user", content="1234567")]) == 6
+
+
+def test_history_keeps_newest_messages_and_marks_older_omissions(tmp_path):
+    connection = make_db(tmp_path / "history-budget.db")
+    try:
+        branch_id = setup_branch(connection)
+        history = [
+            {"id": f"m{i}", "role": "assistant", "content": f"history message {i:02d} " + ("x" * 20)}
+            for i in range(10)
+        ]
+        req = CompileRequest(
+            access_context=build_access_context(connection, branch_id=branch_id),
+            current_user_message="Now",
+            current_user_message_id="current",
+            history=history,
+            provider_id="local",
+            provider_label="Local",
+            provider_is_remote=False,
+            model="test-model",
+            max_input_tokens=160,
+            reserve_output_tokens=20,
+        )
+        packet = context_compiler.compile_context(connection, req)
+        history_refs = [
+            item["ref"] for item in packet.included_sources
+            if item["type"] == "message" and item["ref"].startswith("m")
+        ]
+        assert history_refs == ["m7", "m8", "m9"]
+        omission = next(
+            item for item in packet.transformations
+            if item["type"] == "history_omission"
+        )
+        assert omission["omitted_messages"] == 7
+        assert packet.messages[-1].content == "Now"
+        assert packet.token_estimate <= packet.input_budget
+    finally:
+        connection.close()
