@@ -13,17 +13,28 @@
 
 ### Windows M8 manual acceptance checklist
 
-Run from a Windows checkout after fetching the candidate branch:
+Run from a Windows checkout on the main branch:
 
 ```powershell
-git fetch origin
-git switch m8-desktop-shell
-git pull --ff-only
+git switch main
+git pull --ff-only origin main
+
+# Backend regression suite
 cd backend
+uv sync --dev
 uv run pytest
+
+# Desktop syntax checks and tests
 cd ..\desktop
 npm install
+node --check main/main.js
+node --check main/backend-supervisor.js
+node --check main/sse-parser.js
+node --check preload/preload.js
+node --check renderer/renderer.js
 npm test
+
+# Launch the desktop app for manual acceptance checks
 npm start
 ```
 
