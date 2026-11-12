@@ -199,12 +199,12 @@
 - **Failed-candidate tag:** `backend-v0.6.0` → `d99a52e014e2471fe14e2e65892163871f810f42`.
 - **CI:** PASS — Backend CI #43285806228, 77 passed in 4.94s.
 - **Windows:** PASS — user-reported `uv run pytest`; all tests passed.
-- **Next milestone:** M7 — model-assisted extraction, argument/premise graphs, and curation design.
+- **Next milestone:** M7 — bounded LangGraph workflows for chat and explicitly triggered, provenance-preserving claim extraction. Argument/premise graphs and autonomous curation remain deferred.
 
 ## Current work and next steps
 
 - **Current accepted milestone:** M6 — Epistemic records and claim-aware context (backend 0.6.1).
 - **M5 decisions:** deterministic compiler; M4 permissions and branch-history resolution reused; current user message is head-and-tail truncated only when mandatory system + user content exceeds budget; system instructions are never truncated; one immutable snapshot per successfully compiled chat run; inspector reads the stored packet rather than recompiling.
 - **M6 acceptance complete:** CI, user-run Windows tests, and both annotated release tags are verified.
-- **M7 deferred:** model-assisted claim extraction, argument/premise graphs, automated truth judgment, background curation, graph database, and LangGraph.
+- **M7 scope agreed:** LangGraph `chat_turn` and explicit `extract_claims` workflows, SQLite checkpointing, safe structured-output validation, idempotent provenance persistence, and a feature flag. Implementation and verification have not yet begun.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
