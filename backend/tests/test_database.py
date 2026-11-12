@@ -15,6 +15,7 @@ EXPECTED_TABLES = {
     "memory_fts",
     "sources",
     "claims",
+    "claims_fts",
     "claim_status_events",
     "claim_assessments",
     "evidence",
@@ -39,17 +40,17 @@ def open_migrated_db(path):
 def test_migration_applies_once_and_is_idempotent(tmp_path):
     connection = connect_db(tmp_path / "app.db")
     try:
-        assert apply_migrations(connection) == 4
+        assert apply_migrations(connection) == 5
         first = connection.execute(
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
 
-        assert apply_migrations(connection) == 4
+        assert apply_migrations(connection) == 5
         second = connection.execute(
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
 
-        assert len(first) == 4
+        assert len(first) == 5
         assert [tuple(row) for row in second] == [tuple(row) for row in first]
     finally:
         connection.close()
