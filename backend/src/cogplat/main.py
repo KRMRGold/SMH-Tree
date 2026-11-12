@@ -407,6 +407,7 @@ def create_app(
             })
         connection = connect_db(app.state.database_path)
         run = None
+        streaming = False
         try:
             run = run_repo.get_run(connection, run_id)
             if run is None:
@@ -449,6 +450,7 @@ def create_app(
                         yield f"event: error\\ndata: {json.dumps({'run_id': run_id, 'code': 'workflow_error', 'message': (str(exc) or 'Workflow failed.')[:500]}, separators=(',', ':'))}\\n\\n"
                     finally:
                         connection.close()
+                streaming = True
                 return StreamingResponse(
                     resumed_event_stream(), media_type="text/event-stream",
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
@@ -471,7 +473,7 @@ def create_app(
             }) from exc
         finally:
             # Streaming responses own the connection until the generator closes.
-            if not (run is not None and run.get("kind") == "chat_turn" and run.get("status") != "succeeded"):
+            if not streaming:
                 connection.close()
 
 
