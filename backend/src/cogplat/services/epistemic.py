@@ -72,14 +72,34 @@ def create_claim(connection: sqlite3.Connection, payload: ClaimCreate):
     actor_kind = "user" if payload.origin_kind == "user" else (
         "agent" if payload.origin_kind in {"agent", "extraction"} else "system"
     )
+    origin_target = {
+        "user": "message",
+        "agent": "run",
+        "extraction": "message",
+        "import": "source",
+    }[payload.origin_kind]
+    if payload.origin_ref is not None:
+        table = {"message": "messages", "run": "runs", "source": "sources"}[origin_target]
+        if connection.execute(
+            f"SELECT id FROM {table} WHERE id = ?", (payload.origin_ref,)
+        ).fetchone() is None:
+            raise ResourceNotFound(f"Origin {origin_target} not found.")
+
     with connection:
         claim_id = epistemic_repo.create_claim(
             connection, project_id=payload.project_id, claim_type=payload.claim_type,
             text=payload.text, subject=payload.subject, predicate=payload.predicate,
             object_value=payload.object, valid_from=payload.valid_from,
-            valid_to=payload.valid_to, origin_kind=payload.origin_kind,
+            valid_to=payload.valid_to.isoformat() if payload.valid_to else None,
+            origin_kind=payload.origin_kind,
             origin_ref=payload.origin_ref,
         )
+        if payload.origin_ref is not None:
+            epistemic_repo.create_origin_link(
+                connection, claim_id, target_type=origin_target,
+                target_id=payload.origin_ref, actor_kind=actor_kind,
+                actor_ref=payload.origin_ref,
+            )
         epistemic_repo.append_status(
             connection, claim_id, status=initial_status, scope="default",
             policy=None, rationale="Initial status assigned from claim origin.",
