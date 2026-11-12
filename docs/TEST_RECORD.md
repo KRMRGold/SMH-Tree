@@ -3,10 +3,11 @@
 ## M5 candidate run — NOT ACCEPTED
 
 - **Candidate version:** backend 0.5.0.
-- **Implementation commit tested:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
+- **Implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
+- **Latest candidate verification commit:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec.
 - **Run date:** 2026-11-12 UTC.
-- **Automated CI:** PASS — [Backend CI #55](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131448849), Python 3.12.16, pytest 9.2.0, 63 passed in 3.02s.
-- **Coverage added:** deterministic packet compilation; current-message deduplication; user head-and-tail truncation with original storage preserved; system overflow; project/memory/history selection; remote memory filtering; newest-first history and omission marker; snapshot creation and immutability; inspector authentication and retrieval; snapshots retained after provider failure/cancellation; existing M0–M4 regression suite.
+- **Automated CI:** PASS — [Backend CI #62](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131667945), Python 3.12.16, pytest 9.2.0, 64 passed in 3.06s.
+- **Coverage added:** deterministic packet compilation; current-message deduplication; user head-and-tail truncation with original storage preserved; system overflow; project/memory/history selection; remote memory filtering and explicit sharing settings; newest-first history and omission marker; snapshot creation and immutability; inspector authentication and retrieval; exact remote audit refs/byte count; snapshots retained after provider failure/cancellation; existing M0–M4 regression suite.
 - **Windows verification:** NOT RUN. Required action: run `uv run pytest` from `backend/` on Windows and report the result.
 - **Release tag:** `backend-v0.5.0` not yet created; pending Windows verification and final candidate tag creation.
 - **Acceptance status:** NOT ACCEPTED — CI passed, but Windows verification and the required release tag remain outstanding.
