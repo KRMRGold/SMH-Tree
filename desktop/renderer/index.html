@@ -73,6 +73,7 @@
           <button type="button" class="view-tab" data-view="context">Context</button>
           <button type="button" class="view-tab" data-view="memory">Memory</button>
           <button type="button" class="view-tab" data-view="claims">Claims</button>
+          <button type="button" class="view-tab" data-view="settings">Settings</button>
         </nav>
 
         <section id="context-panel" class="data-panel" hidden>
@@ -95,6 +96,21 @@
           <div class="panel-filters"><label>Search claims <input id="claim-search" type="search" placeholder="Find a claim…"></label></div>
           <div class="claims-layout"><div id="claims-list" class="record-list"><p class="muted">Loading claims…</p></div><article id="claim-detail" class="claim-detail"><p class="muted">Select a claim to inspect its status, evidence, and relationships.</p></article></div>
           <section class="open-questions"><h3>Open questions</h3><div id="open-questions-list" class="record-list"></div></section>
+        </section>
+
+        <section id="settings-panel" class="data-panel" hidden>
+          <header class="panel-heading"><div><div class="eyebrow">LOCAL CONFIGURATION</div><h2>Settings</h2></div><button type="button" id="refresh-settings" class="secondary-button">Refresh</button></header>
+          <section class="settings-section"><h3>Provider credentials</h3><p class="panel-note">Keys are encrypted by the operating system and stored outside SQLite. They are sent only with requests for the selected provider.</p>
+            <label class="settings-field">Provider <select id="key-provider"></select></label>
+            <label class="settings-field">API key <input id="provider-api-key" type="password" autocomplete="new-password" placeholder="Enter a key to replace the saved key"></label>
+            <div class="settings-actions"><button type="button" id="save-provider-key" class="primary-button">Save key</button><button type="button" id="delete-provider-key" class="secondary-button">Delete saved key</button><span id="provider-key-status" class="record-meta"></span></div>
+          </section>
+          <section class="settings-section"><h3>Remote memory sharing</h3><p class="panel-note">Off by default. Enabling a scope permits its memory to be included in remote-provider context packets.</p>
+            <label class="setting-toggle"><input id="share-global-memory" type="checkbox"> Allow global memory in remote requests</label>
+            <label class="setting-toggle"><input id="share-user-memory" type="checkbox"> Allow user memory in remote requests</label>
+            <button type="button" id="save-sharing-settings" class="primary-button">Save sharing settings</button>
+          </section>
+          <section class="settings-section"><h3>Local data</h3><p class="panel-note">Database, checkpoints, encrypted provider credentials, and other application data are stored in the operating system's application data directory.</p></section>
         </section>
 
         <section id="empty-state" class="empty-state">
