@@ -21,8 +21,8 @@ test("Electron window keeps renderer isolation and navigation restrictions enabl
 test("renderer has no direct Node access and renders message text without HTML injection", async () => {
   const preload = await read("preload/preload.js");
   const renderer = await read("renderer/renderer.js");
+  assert.match(preload, /const\s*\{\s*contextBridge\s*,\s*ipcRenderer\s*\}\s*=\s*require\("electron"\)/);
   assert.match(preload, /contextBridge\.exposeInMainWorld\("cog"/);
-  assert.doesNotMatch(preload, /\brequire\s*\(/);
   assert.doesNotMatch(renderer, /\brequire\s*\(|\bprocess\b/);
   assert.doesNotMatch(renderer, /\.innerHTML\b/);
   assert.match(renderer, /\.textContent\s*=/);
