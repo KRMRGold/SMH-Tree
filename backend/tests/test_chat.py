@@ -106,6 +106,9 @@ def test_provider_error_emits_error_event_and_fails_run(tmp_path):
     run = client.get(f"/v1/runs/{error_data['run_id']}", headers=auth()).json()
     assert run["status"] == "failed"
     assert run["steps"][0]["status"] == "failed"
+    assert client.get(
+        f"/v1/runs/{error_data['run_id']}/context", headers=auth()
+    ).status_code == 200
     messages = client.get(f"/v1/branches/{branch_id}/messages", headers=auth()).json()["items"]
     assert [message["role"] for message in messages] == ["user"]
 
@@ -162,6 +165,10 @@ def test_cancellation_marks_run_cancelled_and_does_not_persist_partial_assistant
         stored = run_repo.get_run(connection, str(run["id"]))
         assert stored["status"] == "cancelled"
         assert stored["steps"][0]["status"] == "cancelled"
+        assert connection.execute(
+            "SELECT COUNT(*) FROM context_snapshots WHERE run_id = ?",
+            (str(run["id"]),),
+        ).fetchone()[0] == 1
         history = conversations.resolve_history(connection, branch_id)
         assert [message["role"] for message in history] == ["user"]
     finally:
