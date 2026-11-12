@@ -206,17 +206,20 @@ async function selectProvider(providerId) {
 async function createProject() {
   const name = window.prompt("Project name");
   if (!name?.trim()) return;
-  await api("/v1/projects", {
+  const created = await api("/v1/projects", {
     method: "POST",
     body: { name: name.trim(), description: null },
   });
+  state.selectedConversationId = null;
+  state.selectedBranchId = null;
+  state.branches = [];
+  elements.activeTitle.textContent = "Choose a conversation";
+  elements.chatPanel.hidden = true;
+  elements.emptyState.hidden = false;
   await loadProjects();
-  const created = state.projects.find((project) => project.name === name.trim());
-  if (created) {
-    state.selectedProjectId = created.id;
-    elements.projectSelect.value = created.id;
-    await loadConversations();
-  }
+  state.selectedProjectId = created.id;
+  elements.projectSelect.value = created.id;
+  await loadConversations();
 }
 
 async function createConversation() {
@@ -241,6 +244,8 @@ async function sendMessage(event) {
     return;
   }
 
+  const allowRemote = state.selectedProviderRemote && elements.allowRemote.checked;
+  elements.allowRemote.checked = false;
   elements.messageInput.value = "";
   appendMessage("user", content, "You");
   const assistantBody = appendMessage("assistant", "", "Assistant");
@@ -255,7 +260,7 @@ async function sendMessage(event) {
         content,
         provider: state.selectedProviderId,
         model,
-        allow_remote: state.selectedProviderRemote && elements.allowRemote.checked,
+        allow_remote: allowRemote,
       },
     },
     async (eventName, data) => {
