@@ -11,6 +11,36 @@
 - **Platform checks not run:** Windows Electron runtime; Windows `safeStorage`/DPAPI integration; Windows process-tree shutdown; manual context, memory, claims, settings and real local/remote provider flows. These remain NOT RUN, not PASS.
 - **Acceptance status:** NOT ACCEPTED — automated CI passes, but required Windows/runtime verification remains outstanding.
 
+### Windows M8 manual acceptance checklist
+
+Run from a Windows checkout after fetching the candidate branch:
+
+```powershell
+git fetch origin
+git switch m8-desktop-shell
+git pull --ff-only
+cd backend
+uv run pytest
+cd ..\desktop
+npm install
+npm test
+npm start
+```
+
+Verify in the running app:
+
+1. Backend status reports connected and version 0.8.0.
+2. Create a project and conversation; send a chat turn through the local provider.
+3. Open Context and confirm the saved packet, included sources, excluded sources, and compiler metadata match the completed run.
+4. Open Memory; filter scopes/states, add a memory item, and mark an active item outdated.
+5. Open Claims; inspect a claim's status/evidence/assessments, compare a contradiction pair, and create/update an open question.
+6. Open Settings; confirm both remote-memory switches initially default off, save a change and reload to verify persistence, and confirm the displayed data directory is under the expected Windows user-data location.
+7. Save and delete a test provider key; confirm the UI never displays the saved value and the selected OS storage backend is not `basic_text`.
+8. Close the app normally; verify the supervised Python backend process exits and no orphan remains.
+
+Record the Windows OS version, Python/Node versions, exact candidate SHA, commands, results, and any failure details here. Do not mark M8 accepted until all required checks pass or a specific limitation is explicitly accepted by the user.
+
+
 ## M6 accepted — epistemic records and claim-aware context
 
 - **Candidate version:** backend 0.6.1.
