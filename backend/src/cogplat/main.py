@@ -122,8 +122,9 @@ def create_app(
                 "branching": True,
                 "chat": True,
                 "streaming": True,
-            "memory": True,
-            "epistemic": True,
+                "memory": True,
+                "epistemic": True,
+                "workflows": runtime_settings.workflows_enabled,
             },
         }
 
@@ -296,11 +297,11 @@ def create_app(
                         max_input_tokens=runtime_settings.default_max_input_tokens,
                         reserve_output_tokens=runtime_settings.default_reserve_output_tokens,
                     ):
-                        yield f"event: {event}\\ndata: {json.dumps(data, separators=(',', ':'))}\\n\\n"
+                        yield f"event: {event}\ndata: {json.dumps(data, separators=(',', ':'))}\n\n"
                 except ContextCompileError as exc:
-                    yield f"event: error\\ndata: {json.dumps({'run_id': str(run['id']), 'code': exc.code, 'message': str(exc)[:500]}, separators=(',', ':'))}\\n\\n"
+                    yield f"event: error\ndata: {json.dumps({'run_id': str(run['id']), 'code': exc.code, 'message': str(exc)[:500]}, separators=(',', ':'))}\n\n"
                 except Exception as exc:
-                    yield f"event: error\\ndata: {json.dumps({'run_id': str(run['id']), 'code': 'provider_error', 'message': (str(exc) or 'Workflow failed.')[:500]}, separators=(',', ':'))}\\n\\n"
+                    yield f"event: error\ndata: {json.dumps({'run_id': str(run['id']), 'code': 'provider_error', 'message': (str(exc) or 'Workflow failed.')[:500]}, separators=(',', ':'))}\n\n"
                 finally:
                     connection.close()
 
