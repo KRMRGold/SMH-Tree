@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import sqlite3
@@ -242,17 +243,19 @@ async def stream_chat_workflow(
             yield "done", {"run_id": run_id, "message": message}
         except BaseException as exc:
             state = await graph.aget_state(config)
-            step_id = state.values.get("provider_step_id")
+            values = state.values
+            step_id = values.get("provider_step_id") or values.get("compile_step_id")
+            cancelled = isinstance(exc, asyncio.CancelledError)
             if step_id:
                 with connection:
                     run_repo.finish_step(
                         connection, str(step_id),
-                        "cancelled" if isinstance(exc, (KeyboardInterrupt,)) else "failed",
-                        str(exc)[:500],
+                        "cancelled" if cancelled else "failed", str(exc)[:500],
                     )
             with connection:
                 run_repo.finish_run(
-                    connection, run_id, "failed", error=str(exc)[:1000]
+                    connection, run_id,
+                    "cancelled" if cancelled else "failed", error=str(exc)[:1000],
                 )
             raise
 
