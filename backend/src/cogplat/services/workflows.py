@@ -324,6 +324,8 @@ def build_extraction_graph(
             raise ValueError("Provider output did not match the claim extraction contract.") from exc
         validated: list[dict[str, str]] = []
         for claim in parsed.claims:
+            if not claim.text.strip() or not claim.evidence_excerpt.strip():
+                raise ValueError("Claim text and evidence excerpts must contain non-whitespace text.")
             if claim.evidence_excerpt not in state["content"]:
                 raise ValueError("Claim evidence must be an exact excerpt from the source message.")
             start = state["content"].find(claim.evidence_excerpt)
@@ -419,7 +421,11 @@ async def run_extraction_workflow(
             if output is None:
                 raise RuntimeError("Extraction completed without a persisted result.")
             return output
-        except Exception as exc:
+        except BaseException as exc:
             with connection:
-                run_repo.finish_run(connection, run_id, "failed", error=str(exc)[:1000])
+                run_repo.finish_run(
+                    connection, run_id,
+                    "cancelled" if isinstance(exc, asyncio.CancelledError) else "failed",
+                    error=str(exc)[:1000],
+                )
             raise
