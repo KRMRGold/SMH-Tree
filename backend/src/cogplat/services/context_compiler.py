@@ -176,8 +176,10 @@ def compile_context(
     # Fetch with local visibility first, then apply the existing M4 remote-sharing
     # policy explicitly so exclusions remain visible in the packet metadata.
     local_context = replace(req.access_context, allow_remote=False)
-    fts_items = _list_all_memory(
-        connection, local_context, query=original_user
+    fts_items = (
+        _list_all_memory(connection, local_context, query=original_user)
+        if original_user.strip()
+        else []
     )
     all_items = _list_all_memory(connection, local_context)
     fts_order = {str(item["id"]): index for index, item in enumerate(fts_items)}
