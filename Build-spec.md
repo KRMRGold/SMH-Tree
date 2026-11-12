@@ -448,7 +448,9 @@ def compile_context(
 - Configured maximum input tokens and reserved output tokens.
 - The compiler/configuration version needed to reproduce the selection policy.
 
-The provider/model context profile supplies the input limit and output reserve. Do not guess a model's capacity from its name. If no model-specific profile exists, use the configured conservative application default. Reject invalid limits and any configuration where the output reserve leaves no usable input budget.
+The provider/model context profile supplies the input limit and output reserve. Do not guess a model's capacity from its name. If no model-specific profile exists, use the configured conservative application default. Reject invalid limits and any configuration where the output reserve leaves no usable input budget. Until model-specific profiles are introduced, M5 uses `COGPLAT_DEFAULT_MAX_INPUT_TOKENS` (default `8192`) and `COGPLAT_DEFAULT_RESERVE_OUTPUT_TOKENS` (default `1024`).
+
+The M5 default token counter estimates `ceil(len(text) / 3.5)` tokens per message body plus four tokens of role/framing overhead per message. The fixed mandatory system instructions are defined by the context compiler; they are counted like any other message and are never truncated.
 
 The normalized `ContextPacket` contains:
 - Ordered provider-neutral messages.
