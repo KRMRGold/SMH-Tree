@@ -45,6 +45,9 @@ test("provider credentials stay behind OS-backed encryption in the main process"
   assert.match(main, /safeStorage\.isEncryptionAvailable\(\)/);
   assert.match(main, /safeStorage\.encryptString/);
   assert.match(main, /safeStorage\.decryptString/);
+  assert.match(main, /getSelectedStorageBackend/);
+  assert.match(preload, /getSecureStorageStatus/);
+  assert.match(renderer, /secure-storage-status/);
   assert.match(main, /X-Provider-API-Key/);
   assert.match(preload, /setProviderApiKey/);
   assert.doesNotMatch(renderer, /safeStorage|node:fs|electron/);
