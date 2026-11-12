@@ -1,6 +1,6 @@
 # Cognitive Platform: Build Specification (Desktop MVP)
 
-**Spec version:** 0.2.0. This is a living document: update it in place and let Git history keep prior revisions.
+**Spec version:** 0.3.0. This is a living document: update it in place and let Git history keep prior revisions.
 
 Derived from "Distributed Cognitive Architecture v0.4". The vision document says what the system should become. This document says exactly what to build first, and in what order. Where the two disagree, this document wins for the MVP.
 
@@ -333,6 +333,9 @@ CREATE TABLE context_snapshots (                     -- powers the "what was sen
   id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id),
   provider_label TEXT NOT NULL, packet_json TEXT NOT NULL, token_estimate INTEGER NOT NULL, created_at TEXT NOT NULL
 );
+-- M5 migration 0004 adds a unique index on context_snapshots(run_id) and
+-- BEFORE UPDATE / BEFORE DELETE triggers. Snapshots are immutable, one per
+-- successfully compiled chat_turn. Do not rewrite migration 0001.
 CREATE TABLE remote_transmissions (                  -- append-only audit of anything sent off-device
   id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id),
   provider_label TEXT NOT NULL, item_refs_json TEXT NOT NULL, byte_count INTEGER NOT NULL, created_at TEXT NOT NULL
@@ -424,36 +427,123 @@ class ModelProvider(Protocol):
 
 ---
 
-## 8. Context compiler
+## 8. Context compiler and inspector (M5)
 
-Pure, deterministic, unit-testable. No model calls in the MVP.
+The context compiler is pure, deterministic, and unit-testable. It makes no model calls. It is the **single authority** for deciding which eligible information enters a model request. Sources provide candidates; they do not inject content directly into provider requests.
+
+### 8.1 Contract
 
 ```python
-def compile_context(req: CompileRequest, repos, counter: TokenCounter) -> ContextPacket
+def compile_context(
+    req: CompileRequest,
+    repos,
+    counter: TokenCounter,
+) -> ContextPacket: ...
 ```
 
-`CompileRequest`: `ctx: AccessContext`, `user_message: str`, `provider_label`, `model`, `max_input_tokens`, `reserve_output_tokens`.
+`CompileRequest` contains:
+- A validated `AccessContext`, including conversation, project, branch ancestry, remote permission and fork-time cutoffs.
+- The current user message and its canonical message ID.
+- Provider label and model identifier.
+- Configured maximum input tokens and reserved output tokens.
+- The compiler/configuration version needed to reproduce the selection policy.
 
-Algorithm:
+The provider/model context profile supplies the input limit and output reserve. Do not guess a model's capacity from its name. If no model-specific profile exists, use the configured conservative application default. Reject invalid limits and any configuration where the output reserve leaves no usable input budget.
 
-1. `budget = max_input_tokens - reserve_output_tokens`.
-2. Build candidate sections, each a list of items with `{ref, text, priority, tokens}`:
-   - **System**: fixed app instructions plus the project description. Mandatory.
-   - **Memory**: items from `visible_memory_scopes`. Select by FTS5 match on `user_message` plus all `importance >= 4` and `kind='preference'`, excluding `state != 'active'`.
-   - **Epistemic**: claims in the project whose `text` matches via FTS, plus their current status. Always include the contradicting claim when its counterpart is selected (keep contradictions visible).
-   - **History**: branch history via the recursive query, newest first.
-   - **User message**: mandatory.
-3. Fill mandatory sections first, then spend the remaining budget in order: Memory (cap 25%), Epistemic (cap 15%), History (the rest, newest messages first; if the oldest kept message is cut, insert a single `[earlier messages omitted: N]` marker).
-4. Run the remote gate stripping if the provider is remote.
-5. Return `ContextPacket{ sections, rendered_messages: list[ChatMessage], token_estimate, included_refs, dropped_refs }`.
-6. The caller stores the packet in `context_snapshots`.
+The normalized `ContextPacket` contains:
+- Ordered provider-neutral messages.
+- Included source references, with source type and scope.
+- Excluded candidate references and deterministic exclusion reasons.
+- Token estimates, input limit, output reserve, and section allocations.
+- Transformations, including truncation markers and omitted character/token estimates.
+- Provider/model labels and compiler version.
 
-Rendering: memory and epistemic content go in a clearly delimited system block, with each item tagged by ref (`[mem:ID]`, `[claim:ID status=contested]`). Claims are rendered with their status. **Never present a `proposed`/`contested` claim as established fact.**
+Provider adapters render the normalized packet into their wire format. API keys and other credentials must never appear in the packet, snapshot, run record, or logs.
 
-Tests must cover: budget never exceeded; mandatory sections never dropped; sibling-branch isolation; remote stripping; contradiction pairing; deterministic output for identical input.
+### 8.2 Candidate sources in M5
 
----
+M5 implements these sources only:
 
+1. **System instructions:** fixed application instructions. These are mandatory and are never truncated or silently omitted.
+2. **Project context:** project description, when present. Optional and subject to the context budget.
+3. **Memory:** active items visible through the existing M4 scope rules. Candidate selection uses FTS5 matches against the current user message, plus high-importance items (`importance >= 4`) and preference items. Deduplicate by canonical memory ID.
+4. **Conversation history:** resolved branch history using the existing M1 resolver. The current user message is supplied separately and must not be duplicated from the persisted history.
+
+M5 does not include claims or other epistemic records; those arrive in M6 through a future context-source extension. M5 does not add model-based relevance ranking, embeddings, vector search, or background memory curation.
+
+All memory visibility, including branch ancestry cutoffs and remote global/user sharing settings, must reuse M4's permission logic. Do not create a parallel permission implementation.
+
+### 8.3 Deterministic selection and budget policy
+
+Let `input_budget = max_input_tokens - reserve_output_tokens`. Token estimates use the configured `TokenCounter`; the default remains the conservative `ceil(len(text)/3.5)` estimate. Count the rendered packet, including role/message overhead as represented by the counter, not only raw source text.
+
+Selection policy:
+
+1. Validate limits and build the mandatory system instructions and current user message.
+2. If system instructions alone exceed the input budget, fail compilation with a typed, inspectable error. Never truncate system instructions.
+3. If system instructions plus the current user message exceed the budget, deterministically truncate the **current user message** using head-and-tail preservation. Keep the beginning and end, insert an explicit marker such as `[... N characters omitted ...]`, and record the exact transformation. Preserve the original message unchanged in conversation storage.
+4. With the remaining budget, include optional project context, then eligible memory up to a maximum of 25% of the usable input budget, then history using the remaining capacity. Unused memory allocation may flow to history; the memory cap may not be exceeded.
+5. Select history newest-first so recent context wins. If older history is omitted, include one marker with the count of omitted messages. Render selected history in chronological order.
+6. Order memory candidates deterministically: FTS relevance first, then importance descending, creation time descending, and canonical ID ascending as the final tie-breaker. Include only whole memory items; do not silently cut an individual memory record.
+7. If the final normalized packet still exceeds the budget due to rendering overhead, remove the lowest-priority optional item and recalculate. Repeat deterministically. If no optional content remains and the mandatory system plus truncated user message still cannot fit, fail clearly without calling the provider.
+
+The current user message is therefore preserved as much as possible and is truncated only after optional content has been excluded. System instructions are never truncated. No content is silently dropped: every omission is represented in packet metadata, and user-message truncation is represented in the rendered text.
+
+### 8.4 Remote authorization and final packet
+
+Remote filtering is part of compilation's finalization path, not a later provider-side content mutation:
+
+1. Compile only from sources eligible under the validated access context.
+2. For remote providers, exclude global/user memory unless the corresponding M4 remote-sharing setting explicitly allows it.
+3. Produce the final provider-ready packet and its exact source references.
+4. Apply the existing M3 remote gate to that final packet. If remote transmission is not explicitly allowed, fail closed and do not invoke the provider.
+5. Persist the context snapshot and remote transmission audit before provider network I/O. The transmission audit lists only references actually present in the transmitted packet and records the byte count of the exact compact role/content packet, preserving M3's existing definition.
+6. Pass the exact snapshotted packet to the provider. Do not modify it after snapshot/audit creation.
+
+The snapshot is local inspection data; the remote audit is the record of off-device transmission. Neither may contain API keys. A local run does not create a remote-transmission record.
+
+### 8.5 Snapshot lifecycle and inspector
+
+Migration 0001 already defines `context_snapshots`. M5 adds migration 0004 rather than editing an applied migration:
+- A unique index on `context_snapshots.run_id` enforces at most one snapshot per run.
+- Database triggers reject snapshot updates and deletes.
+- A snapshot is created for every **successfully compiled chat_turn**, before provider invocation. Provider failures and cancellations after compilation retain the snapshot. A run that fails before compilation completes has no packet snapshot; its run/step error records the failure.
+- Non-chat runs do not require context snapshots.
+- The snapshot stores the exact normalized/provider-ready messages, provider and model identifiers, token estimate, budget and source/selection/transformation metadata, and compiler version. The API key is excluded.
+
+The authenticated inspector endpoint is `GET /v1/runs/{id}/context`. It returns the immutable snapshot for that run, or a clear not-found response if no snapshot exists. It must not reconstruct a packet from current memory or settings: the purpose is to inspect what that run actually received. The endpoint exposes only the stored, final authorized packet and its metadata.
+
+### 8.6 Logical implementation boundaries
+
+Keep responsibilities separable without requiring one file per responsibility:
+
+- Candidate retrieval: memory, project and resolved history.
+- Selection: deterministic ordering, deduplication and exclusion reasons.
+- Budgeting: token accounting, allocation and user-message truncation.
+- Rendering: normalized provider-neutral messages.
+- Snapshot persistence: immutable one-per-chat-run record.
+- Inspection: retrieval of the stored snapshot.
+
+The compiler is a deterministic service. Do not introduce LangGraph or agent orchestration here; LangGraph remains M7.
+
+### 8.7 M5 verification
+
+Tests must cover:
+- Identical inputs and configuration produce identical packet content and selection metadata.
+- Current user message is not duplicated when it is already persisted in branch history.
+- System instructions are never truncated; system-only overflow fails before provider invocation.
+- Oversized user messages retain their head and tail, include an explicit omission marker, and leave the stored original unchanged.
+- Optional project context, memory and history are omitted in deterministic priority order when budgets are tight.
+- Memory selection obeys active-state, scope, branch ancestry/fork cutoffs, sibling isolation and remote-sharing settings.
+- Memory ordering and tie-breaking are deterministic; no memory item is partially cut.
+- History selection is newest-first, output is chronological, and omitted-history count is accurate.
+- Final rendered packet never exceeds the configured input budget; output reserve is respected.
+- Remote-denied requests never invoke the provider; remote packets exclude disallowed global/user memory.
+- Remote audit refs and byte count describe the exact final packet and are persisted before provider invocation.
+- Exactly one immutable snapshot exists for each successfully compiled chat run, including provider failure/cancellation after compilation; duplicate snapshots and update/delete attempts are rejected.
+- Inspector returns the stored packet, source refs, exclusions, budget and transformations, without recompiling.
+- Existing M0–M4 regression tests continue to pass.
+ 
 ## 9. Knowledge extension point
 
 ```python
@@ -539,8 +629,9 @@ Each milestone lists what to build and the tests that must pass.
 **M4: Memory.** CRUD, scopes, FTS, supersede/outdate flow, scope eligibility rules.
 - Tests: the full eligibility table in section 6, including branch ancestry with the fork-time cutoff, and sibling exclusion; outdated and superseded items are not selected.
 
-**M5: Context compiler and inspector.** `compile_context` and `context_snapshots`, wired into chat. Inspector endpoint.
-- Tests: everything listed at the end of section 8; a snapshot exists for every run.
+**M5: Context compiler and inspector.** Implement the deterministic compiler in section 8, using M4 permission and memory services and the existing branch-history resolver. Wire it into the chat run before provider invocation. Add migration 0004 to enforce one immutable context snapshot per successfully compiled chat run. Add the authenticated inspector endpoint.
+- Tests: all verification cases in section 8.7; a snapshot exists for every successfully compiled `chat_turn`, including provider failure/cancellation after compilation. Runs that fail before compilation and non-chat runs do not require snapshots.
+- Explicitly deferred: epistemic sources (M6), model-based ranking, embeddings, background formalization/curation, agents and LangGraph (M7).
 
 **M6: Epistemic layer.** Sources, claims, status events, assessments, evidence, relations, open questions, and API. The compiler includes claims with status.
 - Tests: `accepted` without a policy is rejected; status is derived from the latest event per scope; a claim can be `corroborated` in one scope and `contested` in another; contradicting a claim never alters the other claim's record; assessments keep dimensions separate; `contradiction_basis` is stored; a contested claim renders with its status in the compiled context, and its contradicting partner is included alongside.
