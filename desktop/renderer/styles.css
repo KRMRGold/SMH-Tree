@@ -137,3 +137,45 @@ h1 { margin: 6px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em;
   .model-controls { align-items: end; }
   .chat-panel { padding-inline: 20px; }
 }
+
+
+.workspace-tabs {
+  display: flex; gap: 6px; padding: 12px 30px;
+  border-bottom: 1px solid var(--line); background: #15131b;
+}
+.view-tab, .secondary-button, .primary-button {
+  border: 1px solid #3b3345; border-radius: 8px; padding: 7px 11px;
+  background: #201c28; color: #cfc5d8; font-size: 11px;
+}
+.view-tab[aria-current="true"] { color: #f4eafa; border-color: #755a8d; background: #30253a; }
+.primary-button { border-color: #755a8d; background: #49365b; color: #f4eafa; }
+.data-panel {
+  width: min(1100px, 100%); margin: 0 auto; padding: 26px 34px 40px;
+  flex: 1; min-height: 0; overflow-y: auto;
+}
+.panel-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; }
+.panel-heading h2 { margin:6px 0 0; font-size:20px; font-weight:600; }
+.panel-note, .muted { color:var(--muted); font-size:12px; line-height:1.6; }
+.panel-filters { display:flex; flex-wrap:wrap; gap:12px; margin:18px 0; }
+.panel-filters label { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:10px; }
+.panel-filters select, .panel-filters input { min-width:160px; padding:8px 10px; font-size:11px; }
+.record-list { display:flex; flex-direction:column; gap:10px; }
+.record-card, .claim-detail {
+  padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:var(--panel);
+}
+.record-card h3, .claim-detail h3 { margin:0 0 7px; color:#eee6f5; font-size:13px; font-weight:600; line-height:1.5; overflow-wrap:anywhere; }
+.record-meta { margin:0 0 8px; color:var(--muted); font-size:10px; line-height:1.5; overflow-wrap:anywhere; }
+.record-body { margin:6px 0 0; color:#cfc6d7; font-size:11px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
+.record-card button { margin-top:10px; }
+.claims-layout { display:grid; grid-template-columns:minmax(220px, .8fr) minmax(0,1.4fr); gap:14px; align-items:start; }
+.claim-item { width:100%; text-align:left; padding:11px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:#d9d0e1; font-size:11px; line-height:1.5; }
+.claim-item:hover, .claim-item[aria-current="true"] { border-color:#755a8d; background:#292231; }
+.claim-detail { min-height:180px; display:flex; flex-direction:column; gap:10px; }
+.claim-detail .record-card { background:#1b1822; }
+.open-questions { margin-top:28px; }
+.open-questions h3 { color:#d9d0e1; font-size:13px; }
+.open-questions select { margin-right:8px; padding:6px; font-size:10px; }
+@media (max-width: 980px) {
+  .data-panel { padding-inline:20px; }
+  .claims-layout { grid-template-columns:1fr; }
+}
