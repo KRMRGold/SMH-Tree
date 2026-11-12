@@ -6,7 +6,7 @@ import json
 import secrets
 from collections.abc import Mapping
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -770,6 +770,37 @@ def create_app(
             raise HTTPException(status_code=422, detail={
                 "code": "invalid_search_scope", "message": str(exc)
             }) from exc
+
+    @app.get("/v1/settings", dependencies=[Depends(require_token)])
+    def get_settings(connection=Depends(open_database)) -> dict[str, object]:
+        rows = connection.execute(
+            "SELECT key, value_json FROM settings WHERE key IN "
+            "('share_global_memory_remote', 'share_user_memory_remote')"
+        ).fetchall()
+        values = {str(row["key"]): json.loads(str(row["value_json"])) for row in rows}
+        return {
+            "share_global_memory_remote": values.get("share_global_memory_remote", False),
+            "share_user_memory_remote": values.get("share_user_memory_remote", False),
+        }
+
+    @app.patch("/v1/settings", dependencies=[Depends(require_token)])
+    def patch_settings(
+        payload: dict[str, bool] = Body(...),
+        connection=Depends(open_database),
+    ) -> dict[str, object]:
+        allowed = {"share_global_memory_remote", "share_user_memory_remote"}
+        if not payload or set(payload) - allowed or any(type(value) is not bool for value in payload.values()):
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_settings", "message": "Only boolean remote-memory sharing settings may be updated."
+            })
+        with connection:
+            for key, value in payload.items():
+                connection.execute(
+                    "INSERT INTO settings(key, value_json) VALUES (?, ?) "
+                    "ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json",
+                    (key, json.dumps(value)),
+                )
+        return get_settings(connection)
 
     @app.get("/v1/transmissions", dependencies=[Depends(require_token)])
     def get_transmissions(connection=Depends(open_database)) -> dict[str, object]:
