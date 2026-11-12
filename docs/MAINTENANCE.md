@@ -99,18 +99,18 @@
 - **Schema:** migration 0003 enforces scope-id shape and same-scope active supersession links at the database boundary.
 - **Acceptance:** ACCEPTED — CI, user-reported Windows verification, and release-tag completion have been recorded.
 
-### M5 — Context compiler and inspector (candidate; not yet accepted)
+### M5 — Context compiler and inspector (implemented; release tag pending)
 
 - **Candidate backend version:** 0.5.0.
 - **Implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
 - **Latest candidate verification commit:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec.
-- **CI:** PASS — [Backend CI #62](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131667945), Python 3.12.16, pytest 9.2.0, 64 passed in 3.06s. This run tested the latest candidate verification commit above.
-- **Windows verification:** NOT RUN in this session. Required human action: from `backend/`, run `uv run pytest` on Windows and report the result.
-- **Release tag:** `backend-v0.5.0` has not yet been created. The current GitHub integration can read refs but does not expose tag creation; create the tag only after the Windows run passes, targeting the final M5 candidate commit.
+- **CI:** PASS — [Backend CI #64](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131791949), Python 3.12.16, pytest 9.2.0, 64 passed in 2.98s. The run followed the candidate verification commit; it verifies the unchanged implementation plus documentation updates.
+- **Windows verification:** PASS — user-reported `uv run pytest`, Windows 11 environment (`win32`), Python 3.12.13, pytest 9.2.0, 64 passed in 9.69s.
+- **Release tag:** `backend-v0.5.0` is the only remaining release step. Create it at candidate verification commit `31ad365f2a94bbe69bed5772dd34449c5fd758ec`; the available GitHub integration cannot create tags.
 - **Implemented:** deterministic provider-neutral context compilation; fixed mandatory system instructions; project description context; M4-scoped active memory with FTS relevance, importance/preference inclusion, stable ordering and remote-sharing filtering; M1 branch history selection; head-and-tail current-message truncation; token budgeting and omission metadata; immutable one-per-run snapshots via migration 0004; authenticated stored-packet inspector at `GET /v1/runs/{id}/context`.
 - **Run lifecycle:** context compilation and provider streaming are separate run steps. A successfully compiled packet is snapshotted before remote authorization/audit and before provider I/O; snapshots remain after provider failure or cancellation.
 - **Deferred:** epistemic sources (M6), model-specific context profiles, model-based ranking, embeddings, vector search, background memory curation, agents and LangGraph (M7).
-- **Acceptance:** PENDING — CI is green; Windows verification and the candidate tag remain outstanding.
+- **Acceptance:** Implementation and CI/Windows verification complete. Release bookkeeping remains pending until `backend-v0.5.0` is created at the candidate verification commit.
 
 ## Architecture and invariants
 
