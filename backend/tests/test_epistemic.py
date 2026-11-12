@@ -345,5 +345,5 @@ def test_epistemic_api_requires_auth_and_exposes_claim_workflow(tmp_path):
         json={"status": "accepted", "policy": "manual-review", "scope": f"project:{project['id']}"},
         headers=auth,
     )
-    assert accepted.status_code == 200
+    assert accepted.status_code == 201
     assert client.get(f"/v1/claims?project_id={project['id']}", headers=auth).json()["items"]
