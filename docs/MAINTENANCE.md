@@ -102,8 +102,9 @@
 ### M5 — Context compiler and inspector (candidate; not yet accepted)
 
 - **Candidate backend version:** 0.5.0.
-- **Latest implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
-- **CI:** PASS — [Backend CI #55](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131448849), Python 3.12.16, pytest 9.2.0, 63 passed in 3.02s. This run tested the exact implementation commit above.
+- **Implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
+- **Latest candidate verification commit:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec.
+- **CI:** PASS — [Backend CI #62](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131667945), Python 3.12.16, pytest 9.2.0, 64 passed in 3.06s. This run tested the latest candidate verification commit above.
 - **Windows verification:** NOT RUN in this session. Required human action: from `backend/`, run `uv run pytest` on Windows and report the result.
 - **Release tag:** `backend-v0.5.0` has not yet been created. The current GitHub integration can read refs but does not expose tag creation; create the tag only after the Windows run passes, targeting the final M5 candidate commit.
 - **Implemented:** deterministic provider-neutral context compilation; fixed mandatory system instructions; project description context; M4-scoped active memory with FTS relevance, importance/preference inclusion, stable ordering and remote-sharing filtering; M1 branch history selection; head-and-tail current-message truncation; token budgeting and omission metadata; immutable one-per-run snapshots via migration 0004; authenticated stored-packet inspector at `GET /v1/runs/{id}/context`.
