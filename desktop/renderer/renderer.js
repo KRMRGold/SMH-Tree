@@ -484,6 +484,8 @@ async function loadSettings() {
   for(const provider of state.providers) keySelect.append(makeOption(provider.id,provider.label));
   if(state.selectedProviderId) keySelect.value=state.selectedProviderId;
   $("#data-directory").textContent=await window.cog.getDataDirectory();
+  const secureStorage=await window.cog.getSecureStorageStatus();
+  $("#secure-storage-status").textContent=secureStorage.secure ? `OS secure storage: ${secureStorage.backend}` : `Secure storage unavailable or insecure: ${secureStorage.backend}. Provider keys cannot be saved.`;
   const saved=keySelect.value ? await window.cog.hasProviderApiKey(keySelect.value) : false;
   $("#provider-key-status").textContent=saved ? "A key is saved securely for this provider." : "No key saved for this provider.";
   const values=await api("/v1/settings");
