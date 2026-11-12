@@ -15,3 +15,13 @@ class ChatRequest(BaseModel):
     provider: str = Field(default="ollama", min_length=1, max_length=100)
     model: str = Field(min_length=1, max_length=200)
     allow_remote: bool = False
+
+
+class ClaimExtractionRequest(BaseModel):
+    """Explicit model-assisted extraction request for one existing message."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider: str = Field(default="ollama", min_length=1, max_length=100)
+    model: str = Field(min_length=1, max_length=200)
+    allow_remote: bool = False
