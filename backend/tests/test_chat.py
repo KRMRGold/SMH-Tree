@@ -105,7 +105,7 @@ def test_provider_error_emits_error_event_and_fails_run(tmp_path):
     error_data = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")][-1]
     run = client.get(f"/v1/runs/{error_data['run_id']}", headers=auth()).json()
     assert run["status"] == "failed"
-    assert run["steps"][0]["status"] == "failed"
+    assert [step["status"] for step in run["steps"]] == ["succeeded", "failed"]
     assert client.get(
         f"/v1/runs/{error_data['run_id']}/context", headers=auth()
     ).status_code == 200
@@ -164,7 +164,7 @@ def test_cancellation_marks_run_cancelled_and_does_not_persist_partial_assistant
         asyncio.run(exercise())
         stored = run_repo.get_run(connection, str(run["id"]))
         assert stored["status"] == "cancelled"
-        assert stored["steps"][0]["status"] == "cancelled"
+        assert [step["status"] for step in stored["steps"]] == ["succeeded", "cancelled"]
         assert connection.execute(
             "SELECT COUNT(*) FROM context_snapshots WHERE run_id = ?",
             (str(run["id"]),),
