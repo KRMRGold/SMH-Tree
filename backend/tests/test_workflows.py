@@ -13,16 +13,22 @@ class FakeProvider:
     label = "Workflow fake"
     is_remote = False
 
-    def __init__(self, output="hello world", remote=False):
+    def __init__(self, output="hello world", remote=False, fail_once=False):
         self.output = output
         self.is_remote = remote
         self.called = False
+        self.fail_once = fail_once
+        self.calls = 0
 
     async def list_models(self, **opts):
         return ["fake-model"]
 
     async def stream_chat(self, model, messages, **opts):
         self.called = True
+        self.calls += 1
+        if self.fail_once and self.calls == 1:
+            yield "temporary partial"
+            raise RuntimeError("temporary provider failure")
         yield self.output
 
     async def embed(self, model, texts):
@@ -192,3 +198,40 @@ def test_disabling_workflows_keeps_legacy_chat_and_disables_extraction(tmp_path)
     )
     assert extraction.status_code == 503
     assert client.get("/v1/health", headers=auth()).json()["capabilities"]["workflows"] is False
+
+
+
+def test_failed_chat_node_resumes_from_checkpoint_without_recompiling(tmp_path):
+    provider = FakeProvider("complete response", fail_once=True)
+    client = client_for(tmp_path, provider)
+    conversation = client.post(
+        "/v1/conversations", json={"title": "Resume"}, headers=auth()
+    ).json()
+    branch_id = conversation["root_branch_id"]
+    first = client.post(
+        f"/v1/branches/{branch_id}/chat",
+        json={"content": "Resume this turn", "provider": "fake", "model": "fake-model"},
+        headers=auth(),
+    )
+    assert "event: error" in first.text
+    run_id = [
+        json.loads(line[6:])["run_id"]
+        for line in first.text.splitlines()
+        if line.startswith("data: ") and "run_id" in line
+    ][-1]
+    resumed = client.post(f"/v1/runs/{run_id}/resume", headers=auth())
+    assert resumed.status_code == 200
+    assert "event: done" in resumed.text
+    assert provider.calls == 2
+    history = client.get(
+        f"/v1/branches/{branch_id}/messages", headers=auth()
+    ).json()["items"]
+    assert [item["role"] for item in history] == ["user", "assistant"]
+    assert history[-1]["content"] == "complete response"
+    connection = sqlite3.connect(tmp_path / "app.db")
+    try:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM context_snapshots WHERE run_id = ?", (run_id,)
+        ).fetchone()[0] == 1
+    finally:
+        connection.close()
