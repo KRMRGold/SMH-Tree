@@ -167,3 +167,16 @@ Failed and superseded candidates remain in Git history; their version identities
 - Live Ollama runtime with an installed model; the adapter was tested against a local mocked HTTP server.
 - Live OpenAI-compatible remote provider; the adapter was tested against a mocked HTTP server and no real API key or user data was transmitted.
 - Desktop and end-to-end flows remain M8–M9 work.
+
+
+## Current candidate — M7 (not yet accepted)
+
+- **Candidate version:** backend 0.7.0.
+- **Candidate commit:** `9d525efd333812abdbca17e1a22efff610f063d0`.
+- **Run date:** 2026-11-12.
+- **Automated CI:** PASS — [Backend CI #157](https://github.com/KRMRGold/SMH-Tree/actions/runs/43291634423), Python 3.12.16, pytest 9.2.0, 83 passed in 6.35s.
+- **Windows verification:** NOT RUN in this session; requires the user's Windows checkout.
+- **Release tag:** NOT CREATED; candidate acceptance remains pending Windows verification.
+- **Coverage added:** checkpointed chat graph preserves SSE, context snapshots, remote authorization, completed-only assistant persistence, and failure resume; checkpoint persistence survives app recreation; extraction validates strict JSON and exact source excerpts, persists proposed claims with evidence plus `derived_from`/`produced_by` provenance, rejects malformed/non-verbatim output without partial claims, enforces remote opt-in, and respects the workflow feature flag.
+- **Persistence:** migration 0006 stores remote packet SHA-256 and enforces one audit row per run. LangGraph-owned tables live in a separate `checkpoints.db` file beside canonical `app.db`.
+- **Acceptance status:** CANDIDATE — CI passed; Windows verification and release tag are pending.
