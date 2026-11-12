@@ -219,7 +219,10 @@ def test_failed_chat_node_resumes_from_checkpoint_without_recompiling(tmp_path):
         for line in first.text.splitlines()
         if line.startswith("data: ") and "run_id" in line
     ][-1]
-    resumed = client.post(f"/v1/runs/{run_id}/resume", headers=auth())
+    # Recreate the application against the same data directory; checkpoints
+    # must survive this backend restart boundary.
+    restarted_client = client_for(tmp_path, provider)
+    resumed = restarted_client.post(f"/v1/runs/{run_id}/resume", headers=auth())
     assert resumed.status_code == 200
     assert "event: done" in resumed.text
     assert provider.calls == 2
