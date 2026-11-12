@@ -3,10 +3,10 @@
 ## Current accepted state
 
 - **Project:** SMH-Tree
-- **Last accepted backend version:** 0.4.1 (M4 — Scoped memory)
-- **M4 implementation commit:** 0cfbbcc0d34a74264628a15f76275fe115ce787f
-- **Last accepted documentation commit and tag target:** f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5 (`backend-v0.4.1`)
-- **M4 acceptance:** Accepted on 2026-11-11. The user confirmed the Windows test run (55 passed) and reported pushing `backend-v0.4.0` and `backend-v0.4.1`. Tag targets were reported verified in the preceding session; the currently available GitHub connector cannot independently enumerate tag refs.
+- **Last accepted backend version:** 0.5.0 (M5 — Context compiler and inspector)
+- **M5 implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5
+- **M5 candidate verification commit and release tag target:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec (`backend-v0.5.0`)
+- **M5 acceptance:** Accepted on 2026-11-12 after CI, user-reported Windows verification, and independent GitHub verification of the annotated `backend-v0.5.0` tag target. The tag points to `31ad365f2a94bbe69bed5772dd34449c5fd758ec`.
 - **Failed-candidate tag:** `backend-v0.4.0` → 41ae1363fd2ceb79fa9e117b1d237d4db526dc84.
 - **Accepted tag:** `backend-v0.4.1` → f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
 - **M2 acceptance:** Accepted on 2026-11-11. Both `backend-v0.2.0` (failed candidate) and `backend-v0.2.1` (passing candidate) were created and independently verified against their exact commit targets.
@@ -99,18 +99,18 @@
 - **Schema:** migration 0003 enforces scope-id shape and same-scope active supersession links at the database boundary.
 - **Acceptance:** ACCEPTED — CI, user-reported Windows verification, and release-tag completion have been recorded.
 
-### M5 — Context compiler and inspector (implemented; release tag pending)
+### M5 — Context compiler and inspector (accepted)
 
 - **Candidate backend version:** 0.5.0.
 - **Implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
 - **Latest candidate verification commit:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec.
 - **CI:** PASS — [Backend CI #64](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131791949), Python 3.12.16, pytest 9.2.0, 64 passed in 2.98s. The run followed the candidate verification commit; it verifies the unchanged implementation plus documentation updates.
 - **Windows verification:** PASS — user-reported `uv run pytest`, Windows 11 environment (`win32`), Python 3.12.13, pytest 9.2.0, 64 passed in 9.69s.
-- **Release tag:** `backend-v0.5.0` is the only remaining release step. Create it at candidate verification commit `31ad365f2a94bbe69bed5772dd34449c5fd758ec`; the available GitHub integration cannot create tags.
+- **Accepted release tag:** Annotated tag `backend-v0.5.0` points to `31ad365f2a94bbe69bed5772dd34449c5fd758ec`. GitHub ref and annotated-tag object were fetched and independently checked.
 - **Implemented:** deterministic provider-neutral context compilation; fixed mandatory system instructions; project description context; M4-scoped active memory with FTS relevance, importance/preference inclusion, stable ordering and remote-sharing filtering; M1 branch history selection; head-and-tail current-message truncation; token budgeting and omission metadata; immutable one-per-run snapshots via migration 0004; authenticated stored-packet inspector at `GET /v1/runs/{id}/context`.
 - **Run lifecycle:** context compilation and provider streaming are separate run steps. A successfully compiled packet is snapshotted before remote authorization/audit and before provider I/O; snapshots remain after provider failure or cancellation.
 - **Deferred:** epistemic sources (M6), model-specific context profiles, model-based ranking, embeddings, vector search, background memory curation, agents and LangGraph (M7).
-- **Acceptance:** Implementation and CI/Windows verification complete. Release bookkeeping remains pending until `backend-v0.5.0` is created at the candidate verification commit.
+- **Acceptance:** ACCEPTED on 2026-11-12 — implementation, CI, user-reported Windows verification, and release tag verified.
 
 ## Architecture and invariants
 
@@ -126,7 +126,7 @@
 ## Known limitations
 
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
-- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are implemented in candidate 0.5.0; Windows verification and the release tag are pending. Epistemic API remains M6.
+- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are accepted in backend 0.5.0. Epistemic API remains M6.
 - No desktop shell or packaging yet (M8–M9).
 - M0's candidate tag was intentionally omitted with user acceptance.
 - Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M9 work.
@@ -172,21 +172,20 @@
 - **backend 0.0.2:** failed because the health test still expected version 0.0.1 after the version bump; 14 passed, 1 failed.
 - **backend 0.0.3:** repaired test-client dependency and version assertion; 15 passed on Python 3.12. Accepted as M0 with the user-approved tag exception.
 
-## Current accepted milestone — M4
+## Current accepted milestone — M5
 
-- **Accepted version:** backend 0.4.1.
-- **Implementation commit:** 0cfbbcc0d34a74264628a15f76275fe115ce787f.
-- **Accepted documentation commit:** f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
-- **CI:** PASS — Backend CI #15, 55 passed in 3.15s.
-- **Windows:** PASS — user-reported `uv run pytest`, 55 passed in 6.87s.
-- **Tags:** user confirmed both candidate tags were pushed; see M4 section above for targets and verification provenance.
-- **Next milestone:** M5 — Context compiler and inspector.
+- **Accepted version:** backend 0.5.0.
+- **Implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
+- **Candidate verification commit / annotated tag target:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec.
+- **Accepted tag:** `backend-v0.5.0`; its GitHub ref and annotated tag object were independently fetched and verified against the target commit.
+- **CI:** PASS — Backend CI #64, 64 passed in 2.98s.
+- **Windows:** PASS — user-reported `uv run pytest`, 64 passed in 9.69s.
+- **Next milestone:** M6 — Epistemic records.
 
 ## Current work and next steps
 
-- **Current accepted milestone:** M4 — Scoped memory (backend 0.4.1).
-- **Current milestone:** M5 — Context compiler and inspector, candidate backend 0.5.0. The implementation and CI suite are complete; M5 is not accepted yet.
+- **Current accepted milestone:** M5 — Context compiler and inspector (backend 0.5.0).
 - **M5 decisions:** deterministic compiler; M4 permissions and branch-history resolution reused; current user message is head-and-tail truncated only when mandatory system + user content exceeds budget; system instructions are never truncated; one immutable snapshot per successfully compiled chat run; inspector reads the stored packet rather than recompiling.
 - **M5 deferred:** epistemic sources (M6), model-specific context profiles, model-based ranking, embeddings, background formalization/curation, agents and LangGraph (M7).
-- **Next acceptance steps:** run `uv run pytest` from `backend/` on Windows; if it passes, create `backend-v0.5.0` against the final candidate commit; then update this record and `docs/TEST_RECORD.md` to mark M5 accepted.
+- **Next milestone:** M6 — Epistemic records.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
