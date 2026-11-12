@@ -80,16 +80,34 @@ def create_claim(connection: sqlite3.Connection, payload: ClaimCreate):
     }[payload.origin_kind]
     if payload.origin_ref is not None:
         table = {"message": "messages", "run": "runs", "source": "sources"}[origin_target]
-        if connection.execute(
-            f"SELECT id FROM {table} WHERE id = ?", (payload.origin_ref,)
-        ).fetchone() is None:
+        if origin_target == "message":
+            origin = connection.execute(
+                "SELECT c.project_id FROM messages m JOIN branches b ON b.id = m.branch_id "
+                "JOIN conversations c ON c.id = b.conversation_id WHERE m.id = ?",
+                (payload.origin_ref,),
+            ).fetchone()
+        elif origin_target == "run":
+            origin = connection.execute(
+                "SELECT c.project_id FROM runs r LEFT JOIN conversations c ON c.id = r.conversation_id "
+                "WHERE r.id = ?", (payload.origin_ref,)
+            ).fetchone()
+        else:
+            origin = connection.execute(
+                "SELECT project_id FROM sources WHERE id = ?", (payload.origin_ref,)
+            ).fetchone()
+        if origin is None:
             raise ResourceNotFound(f"Origin {origin_target} not found.")
+        origin_project = origin["project_id"]
+        if origin_project is not None and origin_project != payload.project_id:
+            raise ResourceNotFound(f"Origin {origin_target} is outside the claim's project scope.")
+        if payload.project_id is None and origin_project is not None:
+            raise ResourceNotFound(f"Origin {origin_target} is outside the claim's project scope.")
 
     with connection:
         claim_id = epistemic_repo.create_claim(
             connection, project_id=payload.project_id, claim_type=payload.claim_type,
             text=payload.text, subject=payload.subject, predicate=payload.predicate,
-            object_value=payload.object, valid_from=payload.valid_from,
+            object_value=payload.object, valid_from=payload.valid_from.isoformat() if payload.valid_from else None,
             valid_to=payload.valid_to.isoformat() if payload.valid_to else None,
             origin_kind=payload.origin_kind,
             origin_ref=payload.origin_ref,
