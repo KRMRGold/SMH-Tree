@@ -18,6 +18,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from cogplat.domain.chat import ChatMessage
+from cogplat.db.connection import connect_db
 from cogplat.domain.context import CompileRequest, ContextCompileError
 from cogplat.domain.epistemic import ClaimType
 from cogplat.domain.ids import new_id
@@ -225,7 +226,11 @@ async def stream_chat_workflow(
     """Yield the legacy token/done/error SSE events from a checkpointed graph."""
     run_id = str(initial_state["run_id"]) if initial_state is not None else str(resume_run_id)
     config = {"configurable": {"thread_id": run_id}}
+    connection.commit()
+    connection.close()
     async with AsyncSqliteSaver.from_conn_string(database_path) as saver:
+        await saver.setup()
+        connection = connect_db(database_path)
         graph = build_chat_graph(
             connection, provider, provider_label=provider_label,
             provider_is_remote=provider_is_remote, api_key=api_key,
@@ -260,6 +265,8 @@ async def stream_chat_workflow(
                     "cancelled" if cancelled else "failed", error=str(exc)[:1000],
                 )
             raise
+        finally:
+            connection.close()
 
 
 def create_extraction_run(
@@ -410,7 +417,11 @@ async def run_extraction_workflow(
 ) -> dict[str, object]:
     run_id = str(initial_state["run_id"]) if initial_state is not None else str(resume_run_id)
     config = {"configurable": {"thread_id": run_id}}
+    connection.commit()
+    connection.close()
     async with AsyncSqliteSaver.from_conn_string(database_path) as saver:
+        await saver.setup()
+        connection = connect_db(database_path)
         graph = build_extraction_graph(
             connection, provider, provider_label=provider_label, api_key=api_key
         ).compile(checkpointer=saver)
@@ -429,3 +440,5 @@ async def run_extraction_workflow(
                     error=str(exc)[:1000],
                 )
             raise
+        finally:
+            connection.close()
