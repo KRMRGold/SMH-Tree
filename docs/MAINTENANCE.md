@@ -112,6 +112,18 @@
 - **Deferred:** epistemic sources (M6), model-specific context profiles, model-based ranking, embeddings, vector search, background memory curation, agents and LangGraph (M7).
 - **Acceptance:** ACCEPTED on 2026-11-12 — implementation, CI, user-reported Windows verification, and release tag verified.
 
+### M6 — Epistemic records and claim-aware context (candidate; Windows verification and tags pending)
+
+- **Current candidate version:** 0.6.1.
+- **Failed candidate version:** 0.6.0; latest failed candidate commit `d99a52e014e2471fe14e2e65892163871f810f42` (CI run #43285511530 failed because same-second event timestamps plus random UUID ordering selected the wrong latest status/assessment).
+- **Candidate verification commit:** `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
+- **CI:** PASS — [Backend CI #43285806228](https://github.com/KRMRGold/SMH-Tree/actions/runs/43285806228), Python 3.12, 77 passed in 4.94s.
+- **Windows verification:** NOT RUN — awaiting user-run `uv run pytest` from `backend/`.
+- **Release tags:** Pending. Preserve failed `backend-v0.6.0` at `d99a52e014e2471fe14e2e65892163871f810f42`; create passing `backend-v0.6.1` at `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
+- **Implemented:** source registration with metadata/hash validation; immutable claims and source records; provenance `derived_from` links; append-only scoped status events, assessments, evidence, and relations; per-dimension assessment projection; project/global visibility; contradiction relations and contested-partner context bundles; open-question state transitions; claim FTS; unified search over claims, active memory, and branch-visible messages; claim-aware context compilation with a 20% claim budget.
+- **Migration:** 0005 adds claim FTS, search/scope indexes, and database-enforced append-only invariants. Existing migration 0001 was not rewritten.
+- **Acceptance:** Candidate implementation and CI pass. M6 remains unaccepted until Windows verification and both version tags are completed.
+
 ## Architecture and invariants
 
 - SQLite is the canonical store; no ORM.
@@ -126,7 +138,7 @@
 ## Known limitations
 
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
-- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are accepted in backend 0.5.0. Epistemic API remains M6.
+- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are accepted in backend 0.5.0. M6 epistemic records and claim-aware context are implemented as candidate backend 0.6.1; Windows verification and release tags remain pending.
 - No desktop shell or packaging yet (M8–M9).
 - M0's candidate tag was intentionally omitted with user acceptance.
 - Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M9 work.
@@ -139,7 +151,12 @@
 | Config and data paths | pytest config unit tests |
 | Migration idempotency and schema inventory | pytest database integration tests |
 | FK and WAL pragmas | pytest database integration tests |
-| Message and memory FTS triggers | pytest database integration tests |
+| Message, memory, and claim FTS triggers | pytest database integration tests |
+| Epistemic claim/source/status/evidence/relation append-only invariants | pytest migration tests |
+| Claim scope, status projections, assessments, evidence, provenance, and contradictions | pytest epistemic service tests |
+| Open-question state transitions and project visibility | pytest epistemic service tests |
+| Unified search across claims, memory, and branch-visible messages | pytest search API tests |
+| Claim-aware context selection and contested contradiction partners | pytest context compiler tests |
 | UUIDv7 generation | pytest domain test |
 | Linear branch history | pytest service test |
 | Fork cutoff and parent-after-fork exclusion | pytest service tests |
@@ -185,7 +202,8 @@
 ## Current work and next steps
 
 - **Current accepted milestone:** M5 — Context compiler and inspector (backend 0.5.0).
+- **Current candidate milestone:** M6 — Epistemic records and claim-aware context (backend 0.6.1).
 - **M5 decisions:** deterministic compiler; M4 permissions and branch-history resolution reused; current user message is head-and-tail truncated only when mandatory system + user content exceeds budget; system instructions are never truncated; one immutable snapshot per successfully compiled chat run; inspector reads the stored packet rather than recompiling.
-- **M5 deferred:** epistemic sources (M6), model-specific context profiles, model-based ranking, embeddings, background formalization/curation, agents and LangGraph (M7).
-- **Next milestone:** M6 — Epistemic records.
+- **M6 remaining acceptance steps:** user-run `uv run pytest` from `backend/`; create failed tag `backend-v0.6.0` at `d99a52e014e2471fe14e2e65892163871f810f42`; create passing tag `backend-v0.6.1` at `0f3b8bdf0a321fb20a9f41f6797812e648b73187`; then update this record to accepted.
+- **M6 deferred:** model-based claim extraction, argument/premise graphs, automated truth judgment, background curation, graph database, and LangGraph (M7).
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
