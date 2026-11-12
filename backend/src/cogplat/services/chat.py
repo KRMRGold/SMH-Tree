@@ -9,8 +9,6 @@ from collections.abc import AsyncIterator
 
 from cogplat.domain.chat import ChatMessage
 from cogplat.domain.context import CompileRequest, ContextCompileError
-from cogplat.domain.ids import new_id
-from cogplat.domain.time import utc_now
 from cogplat.providers.base import ModelProvider
 from cogplat.repos import context_snapshots as snapshot_repo
 from cogplat.repos import conversations as conversation_repo
@@ -60,7 +58,9 @@ def prepare_chat(
                 "user_message_id": str(user_message["id"]),
             },
         )
-        step = run_repo.create_step(connection, str(run["id"]), "context_compile")
+        compile_step = run_repo.create_step(
+            connection, str(run["id"]), "context_compile"
+        )
 
     try:
         access_context = build_access_context(
@@ -84,7 +84,7 @@ def prepare_chat(
     except ContextCompileError as exc:
         with connection:
             run_repo.finish_step(
-                connection, str(step["id"]), "failed", str(exc)[:500]
+                connection, str(compile_step["id"]), "failed", str(exc)[:500]
             )
             run_repo.finish_run(
                 connection, str(run["id"]), "failed",
@@ -107,9 +107,12 @@ def prepare_chat(
             connection, str(run["id"]), packet.provider_label,
             packet_data, packet.token_estimate,
         )
-        run_repo.finish_step(connection, str(step["id"]), "succeeded")
+        run_repo.finish_step(connection, str(compile_step["id"]), "succeeded")
+        provider_step = run_repo.create_step(
+            connection, str(run["id"]), "provider_stream"
+        )
     run = run_repo.get_run(connection, str(run["id"]))
-    return run, step, packet.messages
+    return run, provider_step, packet.messages
 
 
 async def stream_chat_events(
