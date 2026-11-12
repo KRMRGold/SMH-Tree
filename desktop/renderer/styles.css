@@ -193,3 +193,25 @@ h1 { margin: 6px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em;
 @media (max-width: 760px) { .contradiction-pair { grid-template-columns:1fr; } }
 
 .data-path { display:block; margin-top:10px; padding:10px; border:1px solid var(--line); border-radius:8px; color:#d2c5df; font-size:11px; overflow-wrap:anywhere; }
+
+.input-dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-width: none;
+  padding: 0;
+  border: 1px solid #51445f;
+  border-radius: 14px;
+  background: #1b1822;
+  color: var(--text);
+  box-shadow: 0 24px 80px #0009;
+}
+.input-dialog::backdrop { background: #08060dcc; backdrop-filter: blur(3px); }
+.input-dialog form { display: flex; flex-direction: column; gap: 12px; padding: 22px; }
+.input-dialog h2 { margin: 0; color: #eee6f5; font-size: 16px; font-weight: 600; }
+.input-dialog label { color: var(--muted); font-size: 11px; }
+.input-dialog textarea {
+  width: 100%; min-height: 42px; resize: vertical; padding: 10px;
+  border: 1px solid #3b3345; border-radius: 8px;
+  background: #121018; color: var(--text); font: inherit; font-size: 13px;
+}
+.input-dialog textarea:focus { outline: 1px solid #9b78b5; border-color: #9b78b5; }
+.input-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
