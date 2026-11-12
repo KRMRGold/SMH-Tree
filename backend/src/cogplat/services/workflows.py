@@ -36,6 +36,7 @@ class ChatState(TypedDict, total=False):
     run_id: str
     branch_id: str
     user_message_id: str
+    compile_step_id: str
     content: str
     provider_id: str
     model: str
