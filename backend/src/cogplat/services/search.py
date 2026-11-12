@@ -39,13 +39,16 @@ def search_records(connection: sqlite3.Connection, ctx: AccessContext, query: st
         ]
         if visible_ids:
             placeholders = ",".join("?" for _ in visible_ids)
-            rows = connection.execute(
-                "SELECT m.* FROM messages m JOIN messages_fts f ON f.rowid = m.rowid "
-                f"WHERE messages_fts MATCH ? AND m.id IN ({placeholders}) "
-                "ORDER BY m.created_at DESC, m.id LIMIT ?",
-                [fts, *visible_ids, limit],
-            ).fetchall()
-            items.extend({"type": "message", "record": dict(row)} for row in rows)
+            for start in range(0, len(visible_ids), 500):
+                chunk = visible_ids[start:start + 500]
+                placeholders = ",".join("?" for _ in chunk)
+                rows = connection.execute(
+                    "SELECT m.* FROM messages m JOIN messages_fts f ON f.rowid = m.rowid "
+                    f"WHERE messages_fts MATCH ? AND m.id IN ({placeholders}) "
+                    "ORDER BY m.created_at DESC, m.id LIMIT ?",
+                    [fts, *chunk, limit],
+                ).fetchall()
+                items.extend({"type": "message", "record": dict(row)} for row in rows)
 
     items.sort(
         key=lambda item: (
