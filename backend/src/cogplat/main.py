@@ -14,7 +14,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from cogplat import __version__
 from cogplat.config import Settings, ensure_data_dir, load_settings
 from cogplat.db.connection import apply_migrations, connect_db
-from cogplat.domain.chat import ChatRequest
+from cogplat.domain.chat import ChatRequest, ClaimExtractionRequest
 from cogplat.domain.context import ContextCompileError
 from cogplat.domain.memory import MemoryCreate, MemoryLifecycleUpdate
 from cogplat.domain.epistemic import (
@@ -36,6 +36,7 @@ from cogplat.services import chat as chat_service
 from cogplat.services import conversations as conversation_service
 from cogplat.services import memory as memory_service
 from cogplat.services import epistemic as epistemic_service
+from cogplat.services import workflows as workflow_service
 from cogplat.services import search as search_service
 from cogplat.services.permissions import InvalidAccessContext, build_access_context
 
@@ -276,6 +277,39 @@ def create_app(
             )
 
         connection = connect_db(app.state.database_path)
+        if runtime_settings.workflows_enabled:
+            try:
+                run, initial_state = workflow_service.start_chat(
+                    connection, branch_id, payload.content, payload.provider,
+                    payload.model, payload.allow_remote,
+                )
+            except LookupError as exc:
+                connection.close()
+                raise not_found(str(exc)) from exc
+
+            async def workflow_event_stream():
+                try:
+                    async for event, data in workflow_service.stream_chat_workflow(
+                        str(app.state.database_path), connection, provider, initial_state,
+                        provider_label=provider.label, provider_is_remote=provider.is_remote,
+                        api_key=x_provider_api_key,
+                        max_input_tokens=runtime_settings.default_max_input_tokens,
+                        reserve_output_tokens=runtime_settings.default_reserve_output_tokens,
+                    ):
+                        yield f"event: {event}\\ndata: {json.dumps(data, separators=(',', ':'))}\\n\\n"
+                except ContextCompileError as exc:
+                    yield f"event: error\\ndata: {json.dumps({'run_id': str(run['id']), 'code': exc.code, 'message': str(exc)[:500]}, separators=(',', ':'))}\\n\\n"
+                except Exception as exc:
+                    yield f"event: error\\ndata: {json.dumps({'run_id': str(run['id']), 'code': 'provider_error', 'message': (str(exc) or 'Workflow failed.')[:500]}, separators=(',', ':'))}\\n\\n"
+                finally:
+                    connection.close()
+
+            return StreamingResponse(
+                workflow_event_stream(),
+                media_type="text/event-stream",
+                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            )
+
         try:
             run, step, messages = chat_service.prepare_chat(
                 connection, branch_id, payload.content, payload.provider,
@@ -314,6 +348,48 @@ def create_app(
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
+    @app.post(
+        "/v1/messages/{message_id}/extract-claims",
+        dependencies=[Depends(require_token)],
+    )
+    async def post_extract_claims(
+        message_id: str,
+        payload: ClaimExtractionRequest,
+        x_provider_api_key: str | None = Header(default=None, alias="X-Provider-API-Key"),
+    ):
+        if not runtime_settings.workflows_enabled:
+            raise HTTPException(status_code=503, detail={
+                "code": "workflows_disabled", "message": "LangGraph workflows are disabled."
+            })
+        provider = app.state.providers.get(payload.provider)
+        if provider is None:
+            raise not_found("Provider not found.")
+        if provider.is_remote and not payload.allow_remote:
+            raise HTTPException(status_code=403, detail={
+                "code": "remote_not_allowed",
+                "message": "Remote transmission is disabled for this extraction.",
+            })
+        connection = connect_db(app.state.database_path)
+        try:
+            run, initial_state = workflow_service.create_extraction_run(
+                connection, message_id, payload.provider, payload.model, payload.allow_remote
+            )
+            return await workflow_service.run_extraction_workflow(
+                str(app.state.database_path), connection, provider, initial_state,
+                provider_label=provider.label, api_key=x_provider_api_key,
+            )
+        except LookupError as exc:
+            raise not_found(str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_extraction_output", "message": str(exc)
+            }) from exc
+        except ProviderError as exc:
+            raise HTTPException(status_code=502, detail={
+                "code": "provider_error", "message": str(exc)
+            }) from exc
+        finally:
+            connection.close()
 
 
     @app.get("/v1/memory", dependencies=[Depends(require_token)])
