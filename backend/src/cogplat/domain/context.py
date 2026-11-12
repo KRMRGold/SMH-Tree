@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
-from typing import Protocol, Sequence
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Protocol, Sequence
 
 from cogplat.domain.chat import ChatMessage
-from cogplat.services.permissions import AccessContext
+
+if TYPE_CHECKING:
+    from cogplat.services.permissions import AccessContext
 
 
 @dataclass(frozen=True, slots=True)
