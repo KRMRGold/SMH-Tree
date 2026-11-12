@@ -63,6 +63,10 @@ export class BackendSupervisor {
     platform = process.platform,
     tokenFactory = () => randomBytes(32).toString("hex"),
     portFactory = findFreeLoopbackPort,
+    argsFactory = ({ backendDir, port }) => [
+      "run", "--project", backendDir, "python", "-m", "cogplat",
+      "--host", "127.0.0.1", "--port", String(port),
+    ],
     sleep = delay,
     startupTimeoutMs = 20_000,
     pollIntervalMs = 200,
@@ -82,6 +86,7 @@ export class BackendSupervisor {
     this.platform = platform;
     this.tokenFactory = tokenFactory;
     this.portFactory = portFactory;
+    this.argsFactory = argsFactory;
     this.sleep = sleep;
     this.startupTimeoutMs = startupTimeoutMs;
     this.pollIntervalMs = pollIntervalMs;
@@ -112,18 +117,7 @@ export class BackendSupervisor {
       throw new Error("The backend token factory must return 32 random bytes as hex.");
     }
 
-    const args = [
-      "run",
-      "--project",
-      this.backendDir,
-      "python",
-      "-m",
-      "cogplat",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      String(port),
-    ];
+    const args = this.argsFactory({ backendDir: this.backendDir, port });
     const child = this.spawnProcess(this.command, args, {
       cwd: this.repoRoot,
       env: {
