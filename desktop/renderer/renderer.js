@@ -413,8 +413,19 @@ async function showClaim(claimId) {
   const evidenceSection = recordCard(target,"Evidence",`${evidence.length} records`,"Sources linked to this claim.");
   for (const item of evidence) addText(evidenceSection,"p","record-body",`${item.stance}: ${item.excerpt ?? ""} ${item.locator ?? ""}`);
   const relations = claim.relations ?? [];
-  const relationSection = recordCard(target,"Relationships",`${relations.length} links`,"Related claims are shown by identifier and relation type.");
-  for (const rel of relations) addText(relationSection,"p","record-body",`${rel.rel} · ${rel.to_claim_id}${rel.contradiction_basis ? " · "+rel.contradiction_basis : ""}`);
+  const relationSection = recordCard(target,"Relationships",`${relations.length} links`,"Contradictions are compared side by side; other links remain listed by type.");
+  for (const rel of relations) {
+    const otherId = rel.from_claim_id === claim.id ? rel.to_claim_id : rel.from_claim_id;
+    if (rel.rel === "contradicts") {
+      try {
+        const other = await api(`/v1/claims/${encodeURIComponent(otherId)}${state.selectedProjectId ? "?project_id="+encodeURIComponent(state.selectedProjectId) : ""}`);
+        const comparison = document.createElement("div"); comparison.className = "contradiction-pair";
+        recordCard(comparison,"Selected claim","",claim.text);
+        recordCard(comparison,"Contradicting claim",rel.contradiction_basis ?? "basis unspecified",other.text);
+        relationSection.append(comparison);
+      } catch { addText(relationSection,"p","record-body",`Contradiction · ${otherId} (details unavailable in this scope)`); }
+    } else addText(relationSection,"p","record-body",`${rel.rel} · ${otherId}`);
+  }
   const assessments = claim.assessments ?? [];
   const assessmentSection = recordCard(target,"Assessments",`${assessments.length} records`,"Assessments are recorded independently of status.");
   for (const item of assessments) addText(assessmentSection,"p","record-body",`${item.dimension}: ${item.value_num ?? item.value_text ?? ""} ${item.rationale ?? ""}`);
@@ -428,6 +439,13 @@ async function showClaim(claimId) {
     await showClaim(claim.id);
   });
   target.append(statusButton);
+}
+async function createOpenQuestion() {
+  const text=window.prompt("What question remains unresolved?");
+  if(!text?.trim()) return;
+  const related=window.prompt("Related claim ID (optional)") || null;
+  await api("/v1/open-questions",{method:"POST",body:{schema_version:1,project_id:state.selectedProjectId||null,text:text.trim(),related_claim_id:related}});
+  await loadOpenQuestions();
 }
 async function loadOpenQuestions() {
   const target=$("#open-questions-list"); target.replaceChildren();
@@ -452,6 +470,7 @@ $("#memory-scope").addEventListener("change",()=>void loadMemory().catch(showPan
 $("#memory-state").addEventListener("change",()=>void loadMemory().catch(showPanelError));
 $("#new-memory").addEventListener("click",()=>void createMemory().catch(showPanelError));
 $("#refresh-claims").addEventListener("click",()=>void loadClaims().catch(showPanelError));
+$("#new-open-question").addEventListener("click",()=>void createOpenQuestion().catch(showPanelError));
 $("#refresh-settings").addEventListener("click",()=>void loadSettings().catch(showPanelError));
 $("#key-provider").addEventListener("change",()=>void window.cog.hasProviderApiKey($("#key-provider").value).then(saved=>{$("#provider-key-status").textContent=saved?"A key is saved securely for this provider.":"No key saved for this provider.";}));
 $("#save-provider-key").addEventListener("click",()=>void saveProviderKey().catch(showPanelError));
