@@ -104,6 +104,9 @@ export class BackendSupervisor {
 
   async #launch() {
     const port = await this.portFactory();
+    if (this.stopping) {
+      throw new Error("Backend supervisor stopped before process launch.");
+    }
     const token = this.tokenFactory();
     if (!/^[a-f0-9]{64}$/i.test(token)) {
       throw new Error("The backend token factory must return 32 random bytes as hex.");
@@ -165,6 +168,11 @@ export class BackendSupervisor {
           throw new Error("Backend process exited during its health check.");
         }
         if (response.ok) {
+          if (this.stopping) {
+            await this.killTree(child, this.platform, this.spawnProcess);
+            if (this.child === child) this.child = null;
+            throw new Error("Backend supervisor stopped during startup.");
+          }
           const connection = { baseUrl, port, token };
           this.connection = connection;
           this.readyChild = child;
