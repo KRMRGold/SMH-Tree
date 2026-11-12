@@ -67,3 +67,14 @@ test("renderer exposes context, memory, claims, and settings views without HTML 
   assert.match(renderer, /\/v1\/settings/);
   assert.doesNotMatch(renderer, /\.innerHTML\b/);
 });
+
+test("renderer uses an in-app dialog instead of unsupported window.prompt", async () => {
+  const html = await read("renderer/index.html");
+  const renderer = await read("renderer/renderer.js");
+  assert.match(html, /<dialog id="input-dialog"/);
+  assert.match(html, /id="input-dialog-value"/);
+  assert.match(renderer, /async function requestText\(/);
+  assert.match(renderer, /dialog\.showModal\(\)/);
+  assert.match(renderer, /await requestText\("Conversation name"\)/);
+  assert.doesNotMatch(renderer, /window\.prompt\s*\(/);
+});
