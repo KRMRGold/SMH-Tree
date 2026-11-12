@@ -106,7 +106,7 @@ def build_chat_graph(
     provider_label: str, provider_is_remote: bool, api_key: str | None,
     max_input_tokens: int, reserve_output_tokens: int,
 ):
-    def compile_context_node(state: ChatState) -> dict[str, object]:
+    async def compile_context_node(state: ChatState) -> dict[str, object]:
         branch = conversation_repo.get_branch(connection, state["branch_id"])
         if branch is None:
             raise LookupError("Branch not found.")
@@ -150,7 +150,7 @@ def build_chat_graph(
             "provider_step_id": str(provider_step["id"]),
         }
 
-    def authorize_node(state: ChatState) -> dict[str, object]:
+    async def authorize_node(state: ChatState) -> dict[str, object]:
         run = run_repo.get_run(connection, state["run_id"])
         remote_gate.authorize_and_audit(
             connection, run, provider,
@@ -176,7 +176,7 @@ def build_chat_graph(
                 writer({"kind": "token", "token": token})
         return {"assistant_content": "".join(chunks)}
 
-    def persist_node(state: ChatState) -> dict[str, object]:
+    async def persist_node(state: ChatState) -> dict[str, object]:
         run = run_repo.get_run(connection, state["run_id"])
         existing = (run or {}).get("output_json") or {}
         message_id = existing.get("assistant_message_id")
@@ -283,7 +283,7 @@ def build_extraction_graph(
     connection: sqlite3.Connection, provider: ModelProvider, *,
     provider_label: str, api_key: str | None,
 ):
-    def load_source(state: ExtractState) -> dict[str, object]:
+    async def load_source(state: ExtractState) -> dict[str, object]:
         message = conversation_repo.get_message(connection, state["message_id"])
         if message is None or str(message["content"]) != state["content"]:
             raise LookupError("Source message changed or is unavailable.")
@@ -329,27 +329,21 @@ def build_extraction_graph(
             })
         return {"claims": validated}
 
-    def persist(state: ExtractState) -> dict[str, object]:
+    async def persist(state: ExtractState) -> dict[str, object]:
         run = run_repo.get_run(connection, state["run_id"])
         existing = (run or {}).get("output_json") or {}
         if existing.get("claim_ids") is not None:
             return {"output": existing}
 
         now = utc_now()
-        source_id = new_id()
         claim_ids: list[str] = []
         with connection:
-            epistemic_repo.create_source(
+            source = epistemic_repo.create_source(
                 connection, project_id=state.get("project_id"), kind="message",
                 title=f'Message {state["message_id"]}', uri=None,
                 content_hash=None, retrieved_at=None,
             )
-            source_row = connection.execute(
-                "SELECT id FROM sources WHERE rowid = last_insert_rowid()"
-            ).fetchone()
-            if source_row is None:
-                raise RuntimeError("Could not retrieve extraction source.")
-            source_id = str(source_row["id"])
+            source_id = str(source["id"])
             for item in state["claims"]:
                 claim_id = epistemic_repo.create_claim(
                     connection, project_id=state.get("project_id"),
@@ -357,6 +351,11 @@ def build_extraction_graph(
                     subject=None, predicate=None, object_value=None,
                     valid_from=None, valid_to=None, origin_kind="extraction",
                     origin_ref=state["message_id"],
+                )
+                epistemic_repo.create_origin_link(
+                    connection, claim_id, target_type="message",
+                    target_id=state["message_id"], actor_kind="agent",
+                    actor_ref=state["run_id"],
                 )
                 epistemic_repo.append_evidence(
                     connection, claim_id, source_id=source_id, stance="context",
