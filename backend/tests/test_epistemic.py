@@ -347,3 +347,56 @@ def test_epistemic_api_requires_auth_and_exposes_claim_workflow(tmp_path):
     )
     assert accepted.status_code == 201
     assert client.get(f"/v1/claims?project_id={project['id']}", headers=auth).json()["items"]
+
+
+def test_claim_origin_ref_creates_scoped_derived_from_link_and_validity_dates(tmp_path):
+    connection = make_db(tmp_path / "provenance.db")
+    try:
+        make_project(connection, "p1")
+        make_project(connection, "p2")
+        conversation = conversations.create_conversation(connection, "Origin", "p1")
+        message = conversations.append_message(
+            connection, str(conversation["root_branch_id"]),
+            "user", "user", "Original research statement",
+        )
+        claim = epistemic.create_claim(
+            connection,
+            ClaimCreate(
+                project_id="p1",
+                claim_type="factual",
+                text="A claim derived from a message",
+                origin_kind="extraction",
+                origin_ref=message["id"],
+                valid_from="2026-01-01T00:00:00Z",
+                valid_to="2026-12-31T23:59:59Z",
+            ),
+        )
+        link = connection.execute(
+            "SELECT * FROM links WHERE from_type = 'claim' AND from_id = ?",
+            (claim["id"],),
+        ).fetchone()
+        assert link["to_type"] == "message"
+        assert link["to_id"] == message["id"]
+        assert link["rel"] == "derived_from"
+        assert claim["valid_from"].startswith("2026-01-01")
+        assert claim["valid_to"].startswith("2026-12-31")
+
+        other_conversation = conversations.create_conversation(connection, "Other", "p2")
+        other_message = conversations.append_message(
+            connection, str(other_conversation["root_branch_id"]),
+            "user", "user", "Other project's statement",
+        )
+        with pytest.raises(epistemic.ResourceNotFound):
+            epistemic.create_claim(
+                connection,
+                ClaimCreate(
+                    project_id="p1",
+                    claim_type="factual",
+                    text="Cross-project origin must be rejected",
+                    origin_kind="extraction",
+                    origin_ref=other_message["id"],
+                ),
+            )
+    finally:
+        connection.close()
+
