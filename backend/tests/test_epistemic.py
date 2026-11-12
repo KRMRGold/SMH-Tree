@@ -400,3 +400,47 @@ def test_claim_origin_ref_creates_scoped_derived_from_link_and_validity_dates(tm
     finally:
         connection.close()
 
+
+def test_global_claim_hides_project_scoped_status_evidence_and_relation_outside_project(tmp_path):
+    connection = make_db(tmp_path / "claim-linked-scope.db")
+    try:
+        make_project(connection, "p1")
+        global_claim = epistemic.create_claim(
+            connection,
+            ClaimCreate(project_id=None, claim_type="factual", text="A globally visible claim"),
+        )
+        project_claim = epistemic.create_claim(
+            connection, claim_payload("A project-only related claim", "p1")
+        )
+        source = epistemic.create_source(
+            connection, SourceCreate(project_id="p1", kind="document", title="Project source")
+        )
+        project_ctx = build_access_context(connection, project_id="p1")
+        epistemic.append_claim_status(
+            connection, global_claim["id"],
+            ClaimStatusCreate(status="contested", scope="project:p1"), project_ctx,
+        )
+        epistemic.add_evidence(
+            connection, global_claim["id"],
+            EvidenceCreate(source_id=source["id"], stance="supports"), project_ctx,
+        )
+        epistemic.add_relation(
+            connection, global_claim["id"],
+            ClaimRelationCreate(to_claim_id=project_claim["id"], rel="contradicts",
+                                contradiction_basis="direct"),
+            project_ctx,
+        )
+
+        global_ctx = build_access_context(connection)
+        hidden = epistemic.get_claim(connection, global_claim["id"], global_ctx)
+        assert [item["scope"] for item in hidden["current_status"]] == ["default"]
+        assert hidden["evidence"] == []
+        assert hidden["relations"] == []
+
+        visible = epistemic.get_claim(connection, global_claim["id"], project_ctx)
+        assert any(item["scope"] == "project:p1" for item in visible["current_status"])
+        assert len(visible["evidence"]) == 1
+        assert len(visible["relations"]) == 1
+    finally:
+        connection.close()
+
