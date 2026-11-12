@@ -121,6 +121,7 @@ def create_app(
                 "chat": True,
                 "streaming": True,
             "memory": True,
+            "epistemic": True,
             },
         }
 
