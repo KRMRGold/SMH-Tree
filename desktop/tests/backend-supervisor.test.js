@@ -65,10 +65,11 @@ test("starts the backend on loopback with a fresh 32-byte token", async () => {
   assert.equal(connection.token, "a".repeat(64));
   assert.equal(launches.length, 1);
   assert.deepEqual(launches[0].args.slice(-4), [
+    "--host",
     "127.0.0.1",
     "--port",
     "43100",
-  ].slice(-4));
+  ]);
   assert.equal(launches[0].options.env.COGPLAT_API_TOKEN, "a".repeat(64));
   assert.equal(launches[0].options.env.COGPLAT_DATA_DIR, "/user-data");
 
