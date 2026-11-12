@@ -28,7 +28,7 @@ def test_health_requires_a_valid_bearer_token(tmp_path):
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
-        "version": "0.6.1",
+        "version": "0.7.0",
         "schema_version": 6,
         "capabilities": {
             "sqlite": True,
@@ -38,6 +38,7 @@ def test_health_requires_a_valid_bearer_token(tmp_path):
             "streaming": True,
             "memory": True,
             "epistemic": True,
+            "workflows": True,
         },
     }
 
