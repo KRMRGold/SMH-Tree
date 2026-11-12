@@ -31,6 +31,9 @@ const state = {
   selectedProviderId: null,
   selectedProviderRemote: false,
   cancelStream: null,
+  lastRunId: null,
+  currentView: "chat",
+  claims: [],
 };
 
 function setConnectionStatus(message, stateName = "ready") {
@@ -151,7 +154,7 @@ async function selectConversation(conversationId) {
   }
   elements.activeTitle.textContent = conversation?.title ?? "Conversation";
   elements.emptyState.hidden = true;
-  elements.chatPanel.hidden = false;
+  switchView("chat");
   await loadMessages();
   renderConversations();
 }
@@ -267,6 +270,7 @@ async function sendMessage(event) {
       if (eventName === "token") {
         assistantBody.textContent += data.token ?? "";
       } else if (eventName === "done") {
+        state.lastRunId = data.run_id ?? state.lastRunId;
         elements.chatStatus.textContent = "Response complete.";
         state.cancelStream = null;
         elements.sendButton.disabled = false;
@@ -280,6 +284,171 @@ async function sendMessage(event) {
     },
   );
 }
+
+
+const views = {
+  chat: $("#chat-panel"),
+  context: $("#context-panel"),
+  memory: $("#memory-panel"),
+  claims: $("#claims-panel"),
+};
+function switchView(name) {
+  if (!views[name]) return;
+  state.currentView = name;
+  document.querySelectorAll(".view-tab").forEach((button) => {
+    button.setAttribute("aria-current", String(button.dataset.view === name));
+  });
+  for (const [key, panel] of Object.entries(views)) panel.hidden = key !== name;
+  if (name === "context") void loadContext().catch(showPanelError);
+  if (name === "memory") void loadMemory().catch(showPanelError);
+  if (name === "claims") void loadClaims().catch(showPanelError);
+}
+function showPanelError(error) {
+  elements.chatStatus.textContent = error?.message ?? String(error);
+}
+function addText(parent, tag, className, value) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.textContent = value ?? "";
+  parent.append(node);
+  return node;
+}
+function recordCard(parent, title, subtitle, body) {
+  const card = document.createElement("article");
+  card.className = "record-card";
+  addText(card, "h3", "", title);
+  if (subtitle) addText(card, "div", "record-meta", subtitle);
+  if (body) addText(card, "p", "record-body", body);
+  parent.append(card);
+  return card;
+}
+async function loadContext() {
+  const target = $("#context-content");
+  target.replaceChildren();
+  if (!state.lastRunId) {
+    addText(target, "p", "muted", "No run in this session yet. Send a message first.");
+    return;
+  }
+  const [snapshot, run] = await Promise.all([
+    api(`/v1/runs/${encodeURIComponent(state.lastRunId)}/context`),
+    api(`/v1/runs/${encodeURIComponent(state.lastRunId)}`),
+  ]);
+  recordCard(target, "Run", `${run.status ?? "unknown"} · ${run.id}`, `Provider: ${snapshot.provider_label} · Estimated tokens: ${snapshot.token_estimate}`);
+  const packet = snapshot.packet ?? {};
+  const messages = Array.isArray(packet.messages) ? packet.messages : [];
+  recordCard(target, "Packet", `${messages.length} messages`, "Exact stored packet sent to the provider. Sensitive content is displayed locally.");
+  for (const message of messages) recordCard(target, String(message.role ?? "message"), message.participant ?? "", message.content ?? "");
+  const dropped = packet.dropped ?? packet.omitted ?? [];
+  recordCard(target, "Compiler metadata", "", JSON.stringify(packet.metadata ?? packet, null, 2));
+  if (Array.isArray(dropped) && dropped.length) recordCard(target, "Dropped context", `${dropped.length} omitted items`, JSON.stringify(dropped, null, 2));
+}
+async function loadMemory() {
+  const target = $("#memory-content");
+  target.replaceChildren();
+  const params = new URLSearchParams({state: $("#memory-state").value, limit: "100"});
+  if ($("#memory-scope").value) params.set("scope", $("#memory-scope").value);
+  if (state.selectedProjectId) params.set("project_id", state.selectedProjectId);
+  if (state.selectedConversationId) params.set("conversation_id", state.selectedConversationId);
+  if (state.selectedBranchId) params.set("branch_id", state.selectedBranchId);
+  const result = await api(`/v1/memory?${params}`);
+  for (const item of result.items ?? []) {
+    const card = recordCard(target, item.content, `${item.kind} · ${item.scope}${item.scope_id ? " · " + item.scope_id : ""} · importance ${item.importance} · ${item.state}`, `Origin: ${item.origin_kind}${item.origin_ref ? " · " + item.origin_ref : ""}`);
+    if (item.state === "active") {
+      const outdated = document.createElement("button");
+      outdated.type = "button"; outdated.className = "secondary-button"; outdated.textContent = "Mark outdated";
+      outdated.addEventListener("click", async () => {
+        await api(`/v1/memory/${encodeURIComponent(item.id)}`, {method:"PATCH",body:{schema_version:1,state:"outdated"}});
+        await loadMemory();
+      });
+      card.append(outdated);
+    }
+  }
+  if (!(result.items ?? []).length) addText(target, "p", "muted", "No memory records match this filter.");
+}
+async function createMemory() {
+  const content = window.prompt("Memory content");
+  if (!content?.trim()) return;
+  const scope = $("#memory-scope").value || (state.selectedProjectId ? "project" : "user");
+  const kind = window.prompt("Memory kind: preference, fact, decision, goal, procedure, open_question, pattern", "fact");
+  if (!kind) return;
+  const scopeId = scope === "project" ? state.selectedProjectId : scope === "conversation" ? state.selectedConversationId : scope === "branch" ? state.selectedBranchId : null;
+  if (["project","conversation","branch"].includes(scope) && !scopeId) {
+    throw new Error(`Select a ${scope} before creating memory in that scope.`);
+  }
+  await api("/v1/memory", {method:"POST",body:{schema_version:1,scope,scope_id:scopeId,kind,content:content.trim(),importance:3,origin_kind:"user"}});
+  await loadMemory();
+}
+async function loadClaims() {
+  const target = $("#claims-list");
+  target.replaceChildren();
+  const params = new URLSearchParams({limit:"100"});
+  if (state.selectedProjectId) params.set("project_id", state.selectedProjectId);
+  const query = $("#claim-search").value.trim();
+  if (query) params.set("q", query);
+  const result = await api(`/v1/claims?${params}`);
+  state.claims = result.items ?? [];
+  for (const claim of state.claims) {
+    const button = document.createElement("button");
+    button.type = "button"; button.className = "claim-item";
+    button.textContent = claim.text;
+    button.setAttribute("aria-current", "false");
+    button.addEventListener("click", () => showClaim(claim.id));
+    target.append(button);
+  }
+  if (!state.claims.length) addText(target, "p", "muted", "No claims found for this project.");
+  await loadOpenQuestions();
+}
+async function showClaim(claimId) {
+  const claim = await api(`/v1/claims/${encodeURIComponent(claimId)}${state.selectedProjectId ? "?project_id="+encodeURIComponent(state.selectedProjectId) : ""}`);
+  const target = $("#claim-detail"); target.replaceChildren();
+  addText(target,"h3","",claim.text);
+  addText(target,"div","record-meta",`${claim.claim_type} · ${claim.project_id ? "project scoped" : "global"} · ${claim.origin_kind}`);
+  const statuses = claim.current_status ?? [];
+  recordCard(target,"Current status",statuses.map(x=>x.scope+": "+x.status).join(" · ") || "No status events","Status is scoped; this view does not infer truth.");
+  const evidence = claim.evidence ?? [];
+  const evidenceSection = recordCard(target,"Evidence",`${evidence.length} records`,"Sources linked to this claim.");
+  for (const item of evidence) addText(evidenceSection,"p","record-body",`${item.stance}: ${item.excerpt ?? ""} ${item.locator ?? ""}`);
+  const relations = claim.relations ?? [];
+  const relationSection = recordCard(target,"Relationships",`${relations.length} links`,"Related claims are shown by identifier and relation type.");
+  for (const rel of relations) addText(relationSection,"p","record-body",`${rel.rel} · ${rel.to_claim_id}${rel.contradiction_basis ? " · "+rel.contradiction_basis : ""}`);
+  const assessments = claim.assessments ?? [];
+  const assessmentSection = recordCard(target,"Assessments",`${assessments.length} records`,"Assessments are recorded independently of status.");
+  for (const item of assessments) addText(assessmentSection,"p","record-body",`${item.dimension}: ${item.value_num ?? item.value_text ?? ""} ${item.rationale ?? ""}`);
+  const statusButton=document.createElement("button"); statusButton.type="button"; statusButton.className="secondary-button"; statusButton.textContent="Record status";
+  statusButton.addEventListener("click",async()=>{
+    const status=window.prompt("Status: proposed, reported, inferred, corroborated, contested, accepted, rejected, superseded, unresolved, unknown","investigating");
+    if(!status)return;
+    const payload={schema_version:1,status,scope:"default",rationale:"Recorded from desktop claims panel.",actor_kind:"user"};
+    if(status==="accepted") payload.policy=window.prompt("Acceptance policy (required)");
+    await api(`/v1/claims/${encodeURIComponent(claim.id)}/status${state.selectedProjectId ? "?project_id="+encodeURIComponent(state.selectedProjectId) : ""}`,{method:"POST",body:payload});
+    await showClaim(claim.id);
+  });
+  target.append(statusButton);
+}
+async function loadOpenQuestions() {
+  const target=$("#open-questions-list"); target.replaceChildren();
+  const query=state.selectedProjectId ? "?project_id="+encodeURIComponent(state.selectedProjectId) : "";
+  const result=await api("/v1/open-questions"+query);
+  for(const item of result.items??[]){
+    const card=recordCard(target,item.text,item.state,item.related_claim_id??"");
+    if(["open","investigating"].includes(item.state)){
+      const select=document.createElement("select");
+      for(const value of ["open","investigating","answered","dropped"]) select.append(makeOption(value,value));
+      select.value=item.state;
+      const save=document.createElement("button"); save.type="button"; save.className="secondary-button"; save.textContent="Update";
+      save.addEventListener("click",async()=>{await api(`/v1/open-questions/${encodeURIComponent(item.id)}${state.selectedProjectId ? "?project_id="+encodeURIComponent(state.selectedProjectId) : ""}`,{method:"PATCH",body:{schema_version:1,state:select.value}});await loadOpenQuestions();});
+      card.append(select,save);
+    }
+  }
+  if(!(result.items??[]).length) addText(target,"p","muted","No open questions.");
+}
+document.querySelectorAll(".view-tab").forEach(button=>button.addEventListener("click",()=>switchView(button.dataset.view)));
+$("#refresh-context").addEventListener("click",()=>void loadContext().catch(showPanelError));
+$("#memory-scope").addEventListener("change",()=>void loadMemory().catch(showPanelError));
+$("#memory-state").addEventListener("change",()=>void loadMemory().catch(showPanelError));
+$("#new-memory").addEventListener("click",()=>void createMemory().catch(showPanelError));
+$("#refresh-claims").addEventListener("click",()=>void loadClaims().catch(showPanelError));
+$("#claim-search").addEventListener("change",()=>void loadClaims().catch(showPanelError));
 
 async function initialize() {
   try {
