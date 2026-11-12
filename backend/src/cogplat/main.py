@@ -15,6 +15,7 @@ from cogplat import __version__
 from cogplat.config import Settings, ensure_data_dir, load_settings
 from cogplat.db.connection import apply_migrations, connect_db
 from cogplat.domain.chat import ChatRequest
+from cogplat.domain.context import ContextCompileError
 from cogplat.domain.memory import MemoryCreate, MemoryLifecycleUpdate
 from cogplat.domain.conversation import (
     BranchFork,
@@ -24,6 +25,7 @@ from cogplat.domain.conversation import (
 )
 from cogplat.providers.base import ModelProvider, ProviderError
 from cogplat.providers.registry import build_registry
+from cogplat.repos import context_snapshots as snapshot_repo
 from cogplat.repos import runs as run_repo
 from cogplat.repos import transmissions as transmission_repo
 from cogplat.services import chat as chat_service
@@ -271,10 +273,20 @@ def create_app(
             run, step, messages = chat_service.prepare_chat(
                 connection, branch_id, payload.content, payload.provider,
                 payload.model, payload.allow_remote,
+                runtime_settings.default_max_input_tokens,
+                runtime_settings.default_reserve_output_tokens,
+                provider.label,
+                provider.is_remote,
             )
         except chat_service.ResourceNotFound as exc:
             connection.close()
             raise not_found(str(exc)) from exc
+        except ContextCompileError as exc:
+            connection.close()
+            raise HTTPException(
+                status_code=422,
+                detail={"code": exc.code, "message": str(exc), "details": exc.details},
+            ) from exc
         except Exception:
             connection.close()
             raise
@@ -382,6 +394,16 @@ def create_app(
         if run is None:
             raise not_found("Run not found.")
         return run
+
+    @app.get("/v1/runs/{run_id}/context", dependencies=[Depends(require_token)])
+    def get_run_context(run_id: str, connection=Depends(open_database)) -> dict[str, object]:
+        run = run_repo.get_run(connection, run_id)
+        if run is None:
+            raise not_found("Run not found.")
+        snapshot = snapshot_repo.get_snapshot(connection, run_id)
+        if snapshot is None:
+            raise not_found("Context snapshot not found for this run.")
+        return snapshot
 
     @app.get("/v1/openapi.json", dependencies=[Depends(require_token)])
     def openapi_schema() -> dict[str, object]:
