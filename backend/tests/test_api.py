@@ -29,7 +29,7 @@ def test_health_requires_a_valid_bearer_token(tmp_path):
     assert response.json() == {
         "status": "ok",
         "version": "0.6.1",
-        "schema_version": 5,
+        "schema_version": 6,
         "capabilities": {
             "sqlite": True,
             "sqlite_fts5": True,
