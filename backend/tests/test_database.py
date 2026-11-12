@@ -45,7 +45,7 @@ def test_migration_applies_once_and_is_idempotent(tmp_path):
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
 
-        assert apply_migrations(connection) == 5
+        assert apply_migrations(connection) == 6
         second = connection.execute(
             "SELECT version, applied_at FROM schema_migrations"
         ).fetchall()
