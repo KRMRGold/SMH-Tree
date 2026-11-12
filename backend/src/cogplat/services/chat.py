@@ -8,13 +8,17 @@ import sqlite3
 from collections.abc import AsyncIterator
 
 from cogplat.domain.chat import ChatMessage
+from cogplat.domain.context import CompileRequest, ContextCompileError
 from cogplat.domain.ids import new_id
 from cogplat.domain.time import utc_now
 from cogplat.providers.base import ModelProvider
+from cogplat.repos import context_snapshots as snapshot_repo
 from cogplat.repos import conversations as conversation_repo
 from cogplat.repos import runs as run_repo
+from cogplat.services import context_compiler
 from cogplat.services import conversations as conversation_service
 from cogplat.services import remote_gate
+from cogplat.services.permissions import build_access_context
 
 RemoteNotAllowed = remote_gate.RemoteNotAllowed
 
@@ -30,6 +34,10 @@ def prepare_chat(
     provider_id: str,
     model: str,
     allow_remote: bool,
+    max_input_tokens: int = 8192,
+    reserve_output_tokens: int = 1024,
+    provider_label: str | None = None,
+    provider_is_remote: bool = False,
 ) -> tuple[dict[str, object], dict[str, object], list[ChatMessage]]:
     branch = conversation_repo.get_branch(connection, branch_id)
     if branch is None:
@@ -50,13 +58,58 @@ def prepare_chat(
                 "provider": provider_id,
                 "model": model,
                 "user_message_id": str(user_message["id"]),
-                "message_refs": [str(item["id"]) for item in history],
             },
         )
-        step = run_repo.create_step(connection, str(run["id"]), "provider_stream")
+        step = run_repo.create_step(connection, str(run["id"]), "context_compile")
 
-    messages = [ChatMessage(role=str(item["role"]), content=str(item["content"])) for item in history]
-    return run, step, messages
+    try:
+        access_context = build_access_context(
+            connection, branch_id=branch_id, allow_remote=allow_remote
+        )
+        packet = context_compiler.compile_context(
+            connection,
+            CompileRequest(
+                access_context=access_context,
+                current_user_message=content,
+                current_user_message_id=str(user_message["id"]),
+                history=history,
+                provider_id=provider_id,
+                provider_label=provider_label or provider_id,
+                provider_is_remote=provider_is_remote,
+                model=model,
+                max_input_tokens=max_input_tokens,
+                reserve_output_tokens=reserve_output_tokens,
+            ),
+        )
+    except ContextCompileError as exc:
+        with connection:
+            run_repo.finish_step(
+                connection, str(step["id"]), "failed", str(exc)[:500]
+            )
+            run_repo.finish_run(
+                connection, str(run["id"]), "failed",
+                error=f"{exc.code}: {str(exc)}"[:1000],
+            )
+        raise
+
+    packet_data = packet.to_dict()
+    with connection:
+        run_input = {
+            "provider": provider_id,
+            "model": model,
+            "user_message_id": str(user_message["id"]),
+            "context_source_refs": packet.source_refs,
+            "message_refs": packet.source_refs,
+            "compiler_version": packet.compiler_version,
+        }
+        run_repo.update_run_input(connection, str(run["id"]), run_input)
+        snapshot_repo.create_snapshot(
+            connection, str(run["id"]), packet.provider_label,
+            packet_data, packet.token_estimate,
+        )
+        run_repo.finish_step(connection, str(step["id"]), "succeeded")
+    run = run_repo.get_run(connection, str(run["id"]))
+    return run, step, packet.messages
 
 
 async def stream_chat_events(
@@ -77,7 +130,10 @@ async def stream_chat_events(
         if api_key:
             options["api_key"] = api_key
         run_input = run.get("input_json") or {}
-        remote_gate.authorize_and_audit(connection, run, provider, messages, run_input.get("message_refs", []))
+        remote_gate.authorize_and_audit(
+            connection, run, provider, messages,
+            run_input.get("context_source_refs", run_input.get("message_refs", [])),
+        )
         async for token in provider.stream_chat(model, messages, **options):
             if not isinstance(token, str):
                 raise TypeError("Provider yielded a non-text token.")
