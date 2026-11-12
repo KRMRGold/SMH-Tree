@@ -82,6 +82,11 @@ def test_chat_streams_tokens_and_persists_one_assistant_message(tmp_path):
     assert sum(message["role"] == "assistant" for message in messages) == 1
     run = client.get(f"/v1/runs/{run_id}", headers=auth()).json()
     assert run["status"] == "succeeded"
+    snapshot_response = client.get(f"/v1/runs/{run_id}/context", headers=auth())
+    assert snapshot_response.status_code == 200
+    snapshot = snapshot_response.json()
+    assert snapshot["token_estimate"] == snapshot["packet"]["token_estimate"]
+    assert snapshot["packet"]["messages"][-1] == {"role": "user", "content": "Say hello"}
     assert run["steps"][0]["status"] == "succeeded"
     assert client.get("/v1/transmissions", headers=auth()).json() == {"items": []}
 
@@ -200,7 +205,8 @@ def test_remote_allowed_is_audited_before_provider_call(tmp_path):
     rows = client.get("/v1/transmissions", headers=auth()).json()["items"]
     assert len(rows) == 1
     assert rows[0]["provider_label"] == "Fake"
-    assert len(rows[0]["item_refs"]) == 1
+    assert len(rows[0]["item_refs"]) == 2
+    assert "system:default" in rows[0]["item_refs"]
     assert rows[0]["byte_count"] > 0
 
 def test_remote_gate_rejects_unapproved_run_before_provider_call(tmp_path):
