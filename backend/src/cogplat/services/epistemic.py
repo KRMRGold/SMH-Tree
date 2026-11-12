@@ -126,9 +126,36 @@ def create_claim(connection: sqlite3.Connection, payload: ClaimCreate):
     return epistemic_repo.get_claim(connection, claim_id)
 
 
+def _filter_claim_detail(connection: sqlite3.Connection, claim: dict[str, object],
+                          ctx: AccessContext):
+    allowed_status_scopes = {"default"}
+    if ctx.project_id is not None:
+        allowed_status_scopes.add(f"project:{ctx.project_id}")
+    claim["current_status"] = [
+        item for item in claim.get("current_status", [])
+        if str(item.get("scope")) in allowed_status_scopes
+    ]
+    claim["evidence"] = [
+        item for item in claim.get("evidence", [])
+        if can_read(connection, ctx, "source", str(item["source_id"]))
+    ]
+    claim["relations"] = [
+        item for item in claim.get("relations", [])
+        if can_read(
+            connection, ctx, "claim",
+            str(item["to_claim_id"] if item["from_claim_id"] == claim["id"]
+                else item["from_claim_id"]),
+        )
+    ]
+    return claim
+
+
 def list_claims(connection: sqlite3.Connection, ctx: AccessContext, *,
                 query: str | None = None, limit: int = 50, offset: int = 0):
-    return epistemic_repo.list_claims(connection, ctx.project_id, query, limit, offset)
+    claims = epistemic_repo.list_claims(
+        connection, ctx.project_id, query, limit, offset
+    )
+    return [_filter_claim_detail(connection, claim, ctx) for claim in claims]
 
 
 def get_claim(connection: sqlite3.Connection, claim_id: str, ctx: AccessContext):
@@ -136,7 +163,7 @@ def get_claim(connection: sqlite3.Connection, claim_id: str, ctx: AccessContext)
     claim = epistemic_repo.get_claim(connection, claim_id)
     if claim is None:
         raise ResourceNotFound("Claim not found.")
-    return claim
+    return _filter_claim_detail(connection, claim, ctx)
 
 
 def append_claim_status(connection: sqlite3.Connection, claim_id: str,
