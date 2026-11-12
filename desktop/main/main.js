@@ -125,6 +125,12 @@ function registerIpcHandlers() {
     return Boolean(keys[validProviderId(providerId)]);
   });
 
+  ipcMain.handle("cog:get-secure-storage-status", (event) => {
+    assertTrustedSender(event);
+    const backend = safeStorage.isEncryptionAvailable() ? safeStorage.getSelectedStorageBackend?.() ?? "unknown" : "unavailable";
+    return { available: safeStorage.isEncryptionAvailable(), backend, secure: backend !== "basic_text" && backend !== "unavailable" };
+  });
+
   ipcMain.handle("cog:get-data-directory", (event) => {
     assertTrustedSender(event);
     return app.getPath("userData");
