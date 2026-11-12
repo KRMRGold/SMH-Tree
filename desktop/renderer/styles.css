@@ -179,3 +179,11 @@ h1 { margin: 6px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em;
   .data-panel { padding-inline:20px; }
   .claims-layout { grid-template-columns:1fr; }
 }
+
+.settings-section { margin:22px 0; padding:18px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+.settings-section h3 { margin:0 0 8px; color:#e6deed; font-size:13px; }
+.settings-field { display:flex; flex-direction:column; gap:6px; max-width:440px; margin:14px 0; color:var(--muted); font-size:10px; }
+.settings-field select, .settings-field input { padding:9px 10px; font-size:11px; }
+.settings-actions { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.setting-toggle { display:flex; align-items:center; gap:9px; margin:12px 0; color:#d4cadf; font-size:11px; }
+.setting-toggle input { accent-color:#b58bd4; }
