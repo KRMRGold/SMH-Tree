@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("cog", Object.freeze({
   getApiBase: () => ipcRenderer.invoke("cog:get-api-base"),
+  getDataDirectory: () => ipcRenderer.invoke("cog:get-data-directory"),
   request: (path, options = {}) => ipcRenderer.invoke("cog:request", {
     path,
     method: options.method ?? "GET",
