@@ -2,11 +2,11 @@
 
 - **Candidate desktop version:** 0.8.0.
 - **Candidate backend version:** 0.8.0.
-- **Candidate commit:** `bf23c204884bae6158be88dbac6cbf057f7f0f49`.
+- **Candidate commit:** `fb150f40a48268ecc5bb4d9df64fdf30fc7868af`.
 - **Run date:** 2026-11-12 UTC.
 - **Backend CI:** PASS — [#43307277703](https://github.com/KRMRGold/SMH-Tree/actions/runs/43307277703), Python 3.12, 85 passed (latest passing run).
-- **Desktop CI:** PASS — [#43307277681](https://github.com/KRMRGold/SMH-Tree/actions/runs/43307277681), Node 22, 13 passed; JavaScript syntax checks passed.
-- **Coverage added:** authenticated remote-memory settings default-off/read-write/strict-validation behavior; renderer workspace panel/security contracts; OS-backed credential storage boundary; provider-key forwarding; data-directory getter; existing process supervision, loopback, auth, fake-provider chat, and SSE tests.
+- **Desktop CI:** PASS — [#43307611958](https://github.com/KRMRGold/SMH-Tree/actions/runs/43307611958), Node 22, 13 passed; JavaScript syntax checks passed.
+- **Coverage added:** authenticated remote-memory settings default-off/read-write/strict-validation behavior; renderer workspace panel/security contracts; OS-backed credential storage boundary; provider-key forwarding; data-directory getter and secure-storage backend status; existing process supervision, loopback, auth, fake-provider chat, and SSE tests.
 - **Failed candidates:** Backend CI #43306456384 and #43306545271 initially exposed a missing required `settings.updated_at` value (84 passed, 1 failed). The upsert now writes the UTC timestamp and the full suite passes. Desktop CI #43306832830 exposed a stale backend version expectation after the backend MINOR bump (12 passed, 1 failed); the launch test now expects 0.8.0 and the suite passes.
 - **Platform checks not run:** Windows Electron runtime; Windows `safeStorage`/DPAPI integration; Windows process-tree shutdown; manual context, memory, claims, settings and real local/remote provider flows. These remain NOT RUN, not PASS.
 - **Acceptance status:** NOT ACCEPTED — automated CI passes, but required Windows/runtime verification remains outstanding.
