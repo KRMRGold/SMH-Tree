@@ -36,6 +36,7 @@ from cogplat.services import chat as chat_service
 from cogplat.services import conversations as conversation_service
 from cogplat.services import memory as memory_service
 from cogplat.services import epistemic as epistemic_service
+from cogplat.services import search as search_service
 from cogplat.services.permissions import InvalidAccessContext, build_access_context
 
 
@@ -569,6 +570,35 @@ def create_app(
         except (epistemic_service.InvalidEpistemicRecord, InvalidAccessContext) as exc:
             raise HTTPException(status_code=409, detail={
                 "code": "invalid_question_transition", "message": str(exc)
+            }) from exc
+
+
+
+    @app.get("/v1/search", dependencies=[Depends(require_token)])
+    def get_search(
+        q: str = Query(min_length=1, max_length=500),
+        project_id: str | None = Query(default=None),
+        conversation_id: str | None = Query(default=None),
+        branch_id: str | None = Query(default=None),
+        scope: str | None = Query(default=None),
+        limit: int = Query(default=50, ge=1, le=100),
+        connection=Depends(open_database),
+    ):
+        try:
+            context = build_access_context(
+                connection, project_id=project_id, conversation_id=conversation_id,
+                branch_id=branch_id,
+            )
+            return search_service.search_records(
+                connection, context, q, memory_scope=scope, limit=limit
+            )
+        except InvalidAccessContext as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_search_context", "message": str(exc)
+            }) from exc
+        except memory_service.InvalidMemoryScope as exc:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_search_scope", "message": str(exc)
             }) from exc
 
     @app.get("/v1/transmissions", dependencies=[Depends(require_token)])
