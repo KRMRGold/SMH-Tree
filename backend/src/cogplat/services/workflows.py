@@ -217,12 +217,13 @@ def build_chat_graph(
 
 async def stream_chat_workflow(
     database_path: str, connection: sqlite3.Connection,
-    provider: ModelProvider, initial_state: dict[str, object], *,
+    provider: ModelProvider, initial_state: dict[str, object] | None, *,
     provider_label: str, provider_is_remote: bool, api_key: str | None,
     max_input_tokens: int, reserve_output_tokens: int,
+    resume_run_id: str | None = None,
 ):
     """Yield the legacy token/done/error SSE events from a checkpointed graph."""
-    run_id = str(initial_state["run_id"])
+    run_id = str(initial_state["run_id"]) if initial_state is not None else str(resume_run_id)
     config = {"configurable": {"thread_id": run_id}}
     async with AsyncSqliteSaver.from_conn_string(database_path) as saver:
         graph = build_chat_graph(
@@ -401,10 +402,11 @@ def build_extraction_graph(
 
 async def run_extraction_workflow(
     database_path: str, connection: sqlite3.Connection,
-    provider: ModelProvider, initial_state: dict[str, object], *,
+    provider: ModelProvider, initial_state: dict[str, object] | None, *,
     provider_label: str, api_key: str | None,
+    resume_run_id: str | None = None,
 ) -> dict[str, object]:
-    run_id = str(initial_state["run_id"])
+    run_id = str(initial_state["run_id"]) if initial_state is not None else str(resume_run_id)
     config = {"configurable": {"thread_id": run_id}}
     async with AsyncSqliteSaver.from_conn_string(database_path) as saver:
         graph = build_extraction_graph(
