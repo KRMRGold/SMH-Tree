@@ -226,3 +226,16 @@ def list_claims(connection: sqlite3.Connection, project_id: str | None,
     params.extend((limit, offset))
     ids = [str(row["id"]) for row in connection.execute(sql, params).fetchall()]
     return [get_claim(connection, claim_id) for claim_id in ids]
+
+def create_origin_link(connection: sqlite3.Connection, claim_id: str, *,
+                       target_type: str, target_id: str,
+                       actor_kind: str, actor_ref: str | None):
+    link_id, now = new_id(), utc_now()
+    connection.execute(
+        "INSERT INTO links(id, from_type, from_id, to_type, to_id, rel, "
+        "created_by_kind, created_by_ref, created_at) "
+        "VALUES (?, 'claim', ?, ?, ?, 'derived_from', ?, ?, ?)",
+        (link_id, claim_id, target_type, target_id, actor_kind, actor_ref, now),
+    )
+    return link_id
+
