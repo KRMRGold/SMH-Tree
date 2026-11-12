@@ -385,6 +385,10 @@ def create_app(
             raise HTTPException(status_code=422, detail={
                 "code": "invalid_extraction_output", "message": str(exc)
             }) from exc
+        except workflow_service.remote_gate.RemoteNotAllowed as exc:
+            raise HTTPException(status_code=403, detail={
+                "code": "remote_not_allowed", "message": str(exc)
+            }) from exc
         except ProviderError as exc:
             raise HTTPException(status_code=502, detail={
                 "code": "provider_error", "message": str(exc)
@@ -466,6 +470,10 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=422, detail={
                 "code": "invalid_workflow_output", "message": str(exc)
+            }) from exc
+        except workflow_service.remote_gate.RemoteNotAllowed as exc:
+            raise HTTPException(status_code=403, detail={
+                "code": "remote_not_allowed", "message": str(exc)
             }) from exc
         except ProviderError as exc:
             raise HTTPException(status_code=502, detail={
