@@ -406,6 +406,7 @@ def create_app(
                 "code": "workflows_disabled", "message": "LangGraph workflows are disabled."
             })
         connection = connect_db(app.state.database_path)
+        run = None
         try:
             run = run_repo.get_run(connection, run_id)
             if run is None:
