@@ -3,11 +3,12 @@
 ## Current accepted state
 
 - **Project:** SMH-Tree
-- **Last accepted backend version:** 0.6.1 (M6 — Epistemic records and claim-aware context)
+- **Last accepted backend version:** 0.7.0 (M7 — Checkpointed workflows and explicit claim extraction)
 - **M5 implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5
 - **M5 candidate verification commit and release tag target:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec (`backend-v0.5.0`)
 - **M5 acceptance:** Accepted on 2026-11-12 after CI, user-reported Windows verification, and independent GitHub verification of the annotated `backend-v0.5.0` tag target. The tag points to `31ad365f2a94bbe69bed5772dd34449c5fd758ec`.
 - **M6 acceptance:** Accepted on 2026-11-12 after CI (77 passed), user-reported Windows verification (all tests passed), and independent verification of both annotated tag targets. `backend-v0.6.0` points to failed candidate `d99a52e014e2471fe14e2e65892163871f810f42`; `backend-v0.6.1` points to passing candidate `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
+- **M7 acceptance:** Accepted on 2026-11-12 after CI (83 passed), user-reported Windows verification (all 83 passed), and independent verification of annotated tag `backend-v0.7.0` pointing to `9d525efd333812abdbca17e1a22efff610f063d0`.
 - **Failed-candidate tag:** `backend-v0.4.0` → 41ae1363fd2ceb79fa9e117b1d237d4db526dc84.
 - **Accepted tag:** `backend-v0.4.1` → f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
 - **M2 acceptance:** Accepted on 2026-11-11. Both `backend-v0.2.0` (failed candidate) and `backend-v0.2.1` (passing candidate) were created and independently verified against their exact commit targets.
@@ -126,6 +127,18 @@
 - **Implemented:** source registration with metadata/hash validation; immutable claims and source records; provenance `derived_from` links; append-only scoped status events, assessments, evidence, and relations; per-dimension assessment projection; project/global visibility; contradiction relations and contested-partner context bundles; open-question state transitions; claim FTS; unified search over claims, active memory, and branch-visible messages; claim-aware context compilation with a 20% claim budget.
 - **Migration:** 0005 adds claim FTS, search/scope indexes, and database-enforced append-only invariants. Existing migration 0001 was not rewritten.
 
+### M7 — Checkpointed workflows and explicit claim extraction (accepted)
+
+- **Accepted backend version:** 0.7.0.
+- **Candidate implementation and annotated tag target:** `9d525efd333812abdbca17e1a22efff610f063d0`.
+- **Accepted tag:** `backend-v0.7.0`; its GitHub ref resolves to an annotated tag object whose target is the exact candidate commit.
+- **CI:** PASS — [Backend CI #157](https://github.com/KRMRGold/SMH-Tree/actions/runs/43291634423), Python 3.12.16, pytest 9.2.0, 83 passed in 6.35s.
+- **Windows verification:** PASS — user-reported Windows `uv run pytest`, all 83 tests passed. The local checkout was `45175c2713f6edcb95833238a24cc70167c84a0f`, two documentation-only commits ahead of the tested candidate; GitHub comparison confirmed no application-code changes between them.
+- **Implemented:** checkpointed LangGraph chat lifecycle; authenticated workflow resume; explicit claim extraction endpoint; strict provider-independent structured-output and exact-evidence validation; proposed claims with evidence and provenance links; remote extraction opt-in; feature-flag fallback to the existing chat path.
+- **Persistence:** migration 0006 stores remote packet SHA-256 and enforces one audit row per run. Canonical product data remains in `app.db`; LangGraph checkpoints use a separate `checkpoints.db` to avoid SQLite lock contention.
+- **Deferred:** argument/premise graphs, automated truth judgment, confidence scores, autonomous/background curation, graph database, vector search, and multi-agent orchestration.
+- **Acceptance:** ACCEPTED on 2026-11-12 — CI, user-reported Windows verification, and annotated release tag independently verified.
+
 ## Architecture and invariants
 
 - SQLite is the canonical store; no ORM.
@@ -140,7 +153,7 @@
 ## Known limitations
 
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
-- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are accepted in backend 0.5.0. M6 epistemic records and claim-aware context are accepted in backend 0.6.1.
+- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are accepted in backend 0.5.0. M6 epistemic records and claim-aware context are accepted in backend 0.6.1. M7 checkpointed workflows and explicit claim extraction are accepted in backend 0.7.0.
 - No desktop shell or packaging yet (M8–M9).
 - M0's candidate tag was intentionally omitted with user acceptance.
 - Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M9 work.
@@ -191,22 +204,19 @@
 - **backend 0.0.2:** failed because the health test still expected version 0.0.1 after the version bump; 14 passed, 1 failed.
 - **backend 0.0.3:** repaired test-client dependency and version assertion; 15 passed on Python 3.12. Accepted as M0 with the user-approved tag exception.
 
-## Current accepted milestone — M6
+## Current accepted milestone — M7
 
-- **Accepted version:** backend 0.6.1.
-- **Implementation / annotated tag target:** `0f3b8bdf0a321fb20a9f41f6797812e648b73187`.
-- **Accepted tag:** `backend-v0.6.1`; its GitHub ref and annotated tag object were independently fetched and verified against the target commit.
-- **Failed-candidate tag:** `backend-v0.6.0` → `d99a52e014e2471fe14e2e65892163871f810f42`.
-- **CI:** PASS — Backend CI #43285806228, 77 passed in 4.94s.
-- **Windows:** PASS — user-reported `uv run pytest`; all tests passed.
-- **Next milestone:** M7 — bounded LangGraph workflows for chat and explicitly triggered, provenance-preserving claim extraction. Argument/premise graphs and autonomous curation remain deferred.
+- **Accepted version:** backend 0.7.0.
+- **Implementation / annotated tag target:** `9d525efd333812abdbca17e1a22efff610f063d0`.
+- **Accepted tag:** `backend-v0.7.0` (annotated; tag object independently verified to target the candidate commit).
+- **CI:** PASS — Backend CI #157, 83 passed in 6.35s.
+- **Windows:** PASS — user-reported `uv run pytest`, all 83 passed on a checkout containing the same application code.
+- **Next milestone:** M8 — desktop process supervision and shell integration, subject to the current Build-spec roadmap.
 
 ## Current work and next steps
 
-- **Current accepted milestone:** M6 — Epistemic records and claim-aware context (backend 0.6.1).
+- **Current accepted milestone:** M7 — Checkpointed workflows and explicit claim extraction (backend 0.7.0).
 - **M5 decisions:** deterministic compiler; M4 permissions and branch-history resolution reused; current user message is head-and-tail truncated only when mandatory system + user content exceeds budget; system instructions are never truncated; one immutable snapshot per successfully compiled chat run; inspector reads the stored packet rather than recompiling.
 - **M6 acceptance complete:** CI, user-run Windows tests, and both annotated release tags are verified.
-- **M7 candidate:** backend 0.7.0 implementation is on `main` at `9d525efd333812abdbca17e1a22efff610f063d0`. CI PASS — Backend CI #157, 83 passed in 6.35s. Windows verification and candidate-tag creation are still pending; M7 is not accepted.
-- **M7 implemented candidate scope:** checkpointed `chat_turn` and explicitly invoked `extract_claims`; authenticated resume endpoint; `COGPLAT_WORKFLOWS_ENABLED` fallback; strict Pydantic JSON validation and exact evidence excerpts; proposed claims with message/source/run provenance; migration 0006 adds remote packet SHA-256 and one-audit-per-run enforcement; LangGraph checkpoints live in package-owned `checkpoints.db` beside canonical `app.db`.
-- **M7 deferred:** argument/premise graphs, truth assessment, confidence scoring, background extraction/curation, graph database, vector search, and multi-agent orchestration.
+- **M7 acceptance complete:** backend 0.7.0 is accepted. CI #157 passed 83 tests; user-reported Windows verification passed all 83 tests; annotated `backend-v0.7.0` points to the exact tested candidate commit.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
