@@ -71,6 +71,27 @@ def _source(ref: str, source_type: str, **metadata: object) -> dict[str, object]
     return {"ref": ref, "type": source_type, **metadata}
 
 
+def _list_all_memory(
+    connection: sqlite3.Connection,
+    access_context,
+    *,
+    query: str | None = None,
+) -> list[dict[str, object]]:
+    """Page through every eligible memory item without silently capping candidates."""
+    page_size = 500
+    offset = 0
+    items: list[dict[str, object]] = []
+    while True:
+        page = memory_service.list_memory(
+            connection, access_context, query=query, state="active",
+            limit=page_size, offset=offset,
+        )
+        items.extend(page)
+        if len(page) < page_size:
+            return items
+        offset += len(page)
+
+
 def compile_context(
     connection: sqlite3.Connection,
     req: CompileRequest,
@@ -155,12 +176,10 @@ def compile_context(
     # Fetch with local visibility first, then apply the existing M4 remote-sharing
     # policy explicitly so exclusions remain visible in the packet metadata.
     local_context = replace(req.access_context, allow_remote=False)
-    fts_items = memory_service.list_memory(
-        connection, local_context, query=original_user, state="active", limit=5000
+    fts_items = _list_all_memory(
+        connection, local_context, query=original_user
     )
-    all_items = memory_service.list_memory(
-        connection, local_context, state="active", limit=5000
-    )
+    all_items = _list_all_memory(connection, local_context)
     fts_order = {str(item["id"]): index for index, item in enumerate(fts_items)}
     eligible_items = all_items
     if req.provider_is_remote:
