@@ -4,12 +4,11 @@
 
 - **Candidate desktop version:** 0.8.0.
 - **Candidate backend version:** 0.8.0 (backward-compatible remote-memory settings API addition).
-- **Latest passing candidate:** `fb150f40a48268ecc5bb4d9df64fdf30fc7868af`.
-- **Branch:** `m8-desktop-shell`; not merged into `main`.
+- **Latest passing candidate:** `1e61d446b0f330ba1f24bc97b7067222d01e696f`.
 - **Implemented:** Electron main/preload/renderer foundation; backend process supervision; context inspector for the exact stored context snapshot; scoped memory list/filter/create/lifecycle controls; claims with status, evidence, assessments, relationship display, contradiction comparison, and open-question management; settings for remote memory sharing and provider credentials.
 - **Credential boundary:** provider keys are stored in an encrypted file under Electron user data using `safeStorage`; insecure `basic_text` fallback is rejected. Keys are injected by the main process only into requests for the matching provider and never exposed to renderer JavaScript, SQLite, logs, or context snapshots.
 - **Remote-sharing settings:** authenticated API endpoints persist global/user memory-sharing flags in the existing `settings` table. Both default off; strict boolean input is required.
-- **Automated verification:** Backend CI [#43307277703](https://github.com/KRMRGold/SMH-Tree/actions/runs/43307277703) PASS — 85 tests. Desktop CI [#43307611958](https://github.com/KRMRGold/SMH-Tree/actions/runs/43307611958) PASS — 13 Node tests plus JavaScript syntax checks. Both runs target the candidate commit above.
+- **Automated verification:** Backend CI [#43308112160](https://github.com/KRMRGold/SMH-Tree/actions/runs/43308112160) PASS — 85 tests. Desktop CI [#43308112132](https://github.com/KRMRGold/SMH-Tree/actions/runs/43308112132) PASS — 13 Node tests plus JavaScript syntax checks. Both runs target the current main commit above.
 - **Not yet accepted:** Windows runtime verification, actual Electron launch and UI interaction, secureStorage behavior on the target Windows environment, and Windows child-process-tree cleanup remain unverified. M8 must not be marked accepted until the required platform checks are complete.
 - **Next:** run the desktop app on Windows, exercise the context/memory/claims/settings views and remote-provider key flow with a fake or test provider, verify clean shutdown leaves no backend process, fix any issues, then update the test record. Packaging and installer work remain M9.
 
