@@ -24,7 +24,7 @@ class CompileRequest:
     model: str
     max_input_tokens: int
     reserve_output_tokens: int
-    compiler_version: str = "m5.0.0"
+    compiler_version: str = "m6.0.0"
 
 
 class TokenCounter(Protocol):
