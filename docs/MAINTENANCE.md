@@ -171,5 +171,9 @@
 
 ## Current work and next steps
 
-- M4 is the current candidate. After acceptance, proceed to M5 — context compiler and inspector.
+- **Current accepted milestone:** M4 — Scoped memory (backend 0.4.1).
+- **Next milestone:** M5 — Context compiler and inspector. The M5 design is refined in `Build-spec.md` section 8 (spec 0.3.0); implementation has not started.
+- **M5 decisions:** deterministic compiler; M4 permissions and branch-history resolution reused; current user message may be deterministically head-and-tail truncated only after optional context is excluded; system instructions are never truncated; one immutable snapshot per successfully compiled chat run; inspector reads the stored packet rather than recompiling.
+- **M5 deferred:** epistemic sources (M6), model-based ranking, embeddings, background formalization/curation, agents and LangGraph (M7).
+- **Next implementation sequence:** define packet/domain contracts and configured context limits; implement candidate retrieval and deterministic selection; add budgeting/truncation and provider-neutral rendering; add migration 0004 and immutable snapshot repository; wire compilation and remote authorization/audit into chat; add inspector endpoint; run the full regression and M5 acceptance suites.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
