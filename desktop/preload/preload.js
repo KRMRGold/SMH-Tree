@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("cog", Object.freeze({
     path,
     method: options.method ?? "GET",
     body: options.body,
+    providerId: options.providerId,
   }),
   stream: (path, options = {}, onEvent = () => {}) => {
     if (typeof onEvent !== "function") {
@@ -22,6 +23,7 @@ contextBridge.exposeInMainWorld("cog", Object.freeze({
       path,
       method: options.method ?? "POST",
       body: options.body,
+      providerId: options.providerId,
     }, [channel.port2]);
     return () => channel.port1.close();
   },
