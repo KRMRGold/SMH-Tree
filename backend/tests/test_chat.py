@@ -212,9 +212,21 @@ def test_remote_allowed_is_audited_before_provider_call(tmp_path):
     rows = client.get("/v1/transmissions", headers=auth()).json()["items"]
     assert len(rows) == 1
     assert rows[0]["provider_label"] == "Fake"
-    assert len(rows[0]["item_refs"]) == 2
-    assert "system:default" in rows[0]["item_refs"]
-    assert rows[0]["byte_count"] > 0
+    done_data = [
+        json.loads(line[6:])
+        for line in response.text.splitlines()
+        if line.startswith("data: ") and "run_id" in line
+    ][-1]
+    packet = client.get(
+        f"/v1/runs/{done_data['run_id']}/context", headers=auth()
+    ).json()["packet"]
+    assert rows[0]["item_refs"] == [
+        source["ref"] for source in packet["included_sources"]
+    ]
+    exact_packet = json.dumps(
+        packet["messages"], ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    assert rows[0]["byte_count"] == len(exact_packet)
 
 def test_remote_gate_rejects_unapproved_run_before_provider_call(tmp_path):
     connection = connect_db(tmp_path / "gate.db")
