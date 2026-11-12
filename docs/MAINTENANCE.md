@@ -3,10 +3,12 @@
 ## Current accepted state
 
 - **Project:** SMH-Tree
-- **Last accepted backend version:** 0.3.1 (M3 — Remote gate and audit)
-- **Last accepted implementation commit:** c61c8a9398e3ce008c40da25a647806827e1df7a
-- **Last accepted tag target:** c61c8a9398e3ce008c40da25a647806827e1df7a (`backend-v0.3.1`)
-- **M3 acceptance:** Accepted on 2026-11-11. Both `backend-v0.3.0` (failed candidate) and `backend-v0.3.1` (passing candidate) were created and independently verified against their exact commit targets.
+- **Last accepted backend version:** 0.4.1 (M4 — Scoped memory)
+- **M4 implementation commit:** 0cfbbcc0d34a74264628a15f76275fe115ce787f
+- **Last accepted documentation commit and tag target:** f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5 (`backend-v0.4.1`)
+- **M4 acceptance:** Accepted on 2026-11-11. The user confirmed the Windows test run (55 passed) and reported pushing `backend-v0.4.0` and `backend-v0.4.1`. Tag targets were reported verified in the preceding session; the currently available GitHub connector cannot independently enumerate tag refs.
+- **Failed-candidate tag:** `backend-v0.4.0` → 41ae1363fd2ceb79fa9e117b1d237d4db526dc84.
+- **Accepted tag:** `backend-v0.4.1` → f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
 - **M2 acceptance:** Accepted on 2026-11-11. Both `backend-v0.2.0` (failed candidate) and `backend-v0.2.1` (passing candidate) were created and independently verified against their exact commit targets.
 - **M0 acceptance:** Accepted on 2026-11-11. The user explicitly chose to proceed without creating the required backend-v0.0.3 Git tag. This is a documented workflow exception, not a claim that the tag exists.
 - **M1 acceptance:** Accepted on 2026-11-11. The required backend-v0.1.0 tag was created and verified. It points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, a documentation follow-up commit whose code tree retains the tested M1 implementation from b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00.
@@ -83,16 +85,19 @@
 - Additional user-run verification: Windows (`win32`), Python 3.12.13, `uv run pytest` — 44 passed in 6.23s.
 - Tags: `backend-v0.3.0` points to failed candidate 0d106009302e235cec68850b0a1c52892eb9bc34; `backend-v0.3.1` points to accepted candidate c61c8a9398e3ce008c40da25a647806827e1df7a. Both refs were independently fetched from GitHub and matched exact targets.
 
-### M4 implemented behavior (candidate)
+### M4 — Scoped memory (accepted)
 
-- Authenticated scoped memory create/list/detail/lifecycle API under /v1/memory.
-- Scope validation for global/user (NULL scope_id), project, conversation, branch, and agent memory.
-- Deterministic eligibility from global/user through project/conversation/agent and branch ancestry. Each ancestor branch uses the fork-message timestamp for its own cutoff; sibling branches are excluded.
-- FTS5 search uses quoted OR terms and applies the same scope and state filters as ordinary listing.
-- Memory content is immutable. Replacements are new active items; prior items can be marked outdated, superseded (with a same-scope active replacement reference), or archived. No hard-delete endpoint.
-- Migration 0003 enforces scope-id shape and same-scope active supersession links at the database boundary.
-- Verification: [Backend CI #15](https://github.com/KRMRGold/SMH-Tree/actions/runs/43116317844), candidate commit 0cfbbcc0d34a74264628a15f76275fe115ce787f, Python 3.12.16, 55 tests passed in 3.15s.
-- Windows verification and candidate tag verification are pending; this section remains candidate status until both pass.
+- **Accepted backend version:** 0.4.1.
+- **Implementation commit:** 0cfbbcc0d34a74264628a15f76275fe115ce787f.
+- **Accepted documentation commit / tag target:** f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
+- **Accepted tag:** `backend-v0.4.1`.
+- **Failed-candidate tag:** `backend-v0.4.0` → 41ae1363fd2ceb79fa9e117b1d237d4db526dc84.
+- **CI:** PASS — [Backend CI #15](https://github.com/KRMRGold/SMH-Tree/actions/runs/43116317844), Python 3.12.16, pytest 9.2.0, 55 passed in 3.15s.
+- **Windows verification:** PASS — user-reported Windows (`win32`), Python 3.12.13, `uv run pytest`, 55 passed in 6.87s.
+- **Tag evidence:** User confirmed both tags were pushed; prior session reported tag targets verified. The current connector cannot independently enumerate tag refs, so this record distinguishes that prior verification from a fresh check in this session.
+- **Behavior:** authenticated scoped memory create/list/detail/lifecycle API under /v1/memory; global/user/project/conversation/branch/agent scopes; deterministic eligibility through branch ancestry with fork-time cutoffs and sibling exclusion; FTS5 search with scope/state filtering; immutable memory content with outdated, superseded, and archived lifecycle states; no hard-delete endpoint.
+- **Schema:** migration 0003 enforces scope-id shape and same-scope active supersession links at the database boundary.
+- **Acceptance:** ACCEPTED — CI, user-reported Windows verification, and release-tag completion have been recorded.
 
 ## Architecture and invariants
 
@@ -108,7 +113,7 @@
 ## Known limitations
 
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
-- M4 memory services, scope enforcement, FTS search, and lifecycle are implemented in the current candidate; formal acceptance awaits Windows verification and tags. Context compiler and inspector remain M5; epistemic API remains M6.
+- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. Context compiler and inspector remain M5; epistemic API remains M6.
 - No desktop shell or packaging yet (M8–M9).
 - M0's candidate tag was intentionally omitted with user acceptance.
 - Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M9 work.
@@ -154,15 +159,15 @@
 - **backend 0.0.2:** failed because the health test still expected version 0.0.1 after the version bump; 14 passed, 1 failed.
 - **backend 0.0.3:** repaired test-client dependency and version assertion; 15 passed on Python 3.12. Accepted as M0 with the user-approved tag exception.
 
-## Current candidate — M4 (not yet accepted)
+## Current accepted milestone — M4
 
-- **Failed candidate:** backend 0.4.0, commit 41ae1363fd2ceb79fa9e117b1d237d4db526dc84; CI run #43116076972 had 53 passed and 1 failed because the API test created inherited branch memory after its fork point.
-- **Repair candidate:** backend 0.4.1. The test now creates ancestor memory before the fork and adds a fork-of-fork cutoff test. The package version is bumped to 0.4.1; the implementation remains on the same migration and service design.
-- **Schema:** migration 0003 adds database-enforced memory scope-id shape and same-scope supersession integrity.
-- **CI:** PASS — [Backend CI #15](https://github.com/KRMRGold/SMH-Tree/actions/runs/43116317844), Python 3.12.16, 55 passed in 3.15s.
-- **Windows verification:** pending user-run tests on the final candidate checkout.
-- **Tags:** pending. Preserve backend-v0.4.0 as the failed candidate and tag the repair as backend-v0.4.1 after final verification.
-- **Acceptance gate:** do not accept until automated CI, Windows local tests, and both backend-v0.4.0 / backend-v0.4.1 tag targets are verified.
+- **Accepted version:** backend 0.4.1.
+- **Implementation commit:** 0cfbbcc0d34a74264628a15f76275fe115ce787f.
+- **Accepted documentation commit:** f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
+- **CI:** PASS — Backend CI #15, 55 passed in 3.15s.
+- **Windows:** PASS — user-reported `uv run pytest`, 55 passed in 6.87s.
+- **Tags:** user confirmed both candidate tags were pushed; see M4 section above for targets and verification provenance.
+- **Next milestone:** M5 — Context compiler and inspector.
 
 ## Current work and next steps
 
