@@ -6,6 +6,10 @@ on:
     paths:
       - "desktop/**"
       - "backend/src/cogplat/__main__.py"
+      - "backend/src/cogplat/main.py"
+      - "backend/tests/**"
+      - "backend/pyproject.toml"
+      - "backend/uv.lock"
       - ".github/workflows/desktop.yml"
   pull_request:
     branches: [main]
