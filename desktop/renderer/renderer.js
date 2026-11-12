@@ -206,8 +206,26 @@ async function selectProvider(providerId) {
   }
 }
 
+async function requestText(label, defaultValue = "") {
+  const dialog = $("#input-dialog");
+  const input = $("#input-dialog-value");
+  $("#input-dialog-label").textContent = label;
+  $("#input-dialog-heading").textContent = label;
+  input.value = defaultValue;
+  dialog.returnValue = "";
+
+  return new Promise((resolve) => {
+    dialog.addEventListener("close", () => {
+      resolve(dialog.returnValue === "submit" ? input.value : null);
+    }, { once: true });
+    dialog.showModal();
+    input.focus();
+    input.select();
+  });
+}
+
 async function createProject() {
-  const name = window.prompt("Project name");
+  const name = await requestText("Project name");
   if (!name?.trim()) return;
   const created = await api("/v1/projects", {
     method: "POST",
@@ -226,7 +244,7 @@ async function createProject() {
 }
 
 async function createConversation() {
-  const title = window.prompt("Conversation name");
+  const title = await requestText("Conversation name");
   if (!title?.trim()) return;
   const conversation = await api("/v1/conversations", {
     method: "POST",
@@ -370,10 +388,10 @@ async function loadMemory() {
   if (!(result.items ?? []).length) addText(target, "p", "muted", "No memory records match this filter.");
 }
 async function createMemory() {
-  const content = window.prompt("Memory content");
+  const content = await requestText("Memory content");
   if (!content?.trim()) return;
   const scope = $("#memory-scope").value || (state.selectedProjectId ? "project" : "user");
-  const kind = window.prompt("Memory kind: preference, fact, decision, goal, procedure, open_question, pattern", "fact");
+  const kind = await requestText("Memory kind: preference, fact, decision, goal, procedure, open_question, pattern", "fact");
   if (!kind) return;
   const scopeId = scope === "project" ? state.selectedProjectId : scope === "conversation" ? state.selectedConversationId : scope === "branch" ? state.selectedBranchId : null;
   if (["project","conversation","branch"].includes(scope) && !scopeId) {
@@ -431,19 +449,19 @@ async function showClaim(claimId) {
   for (const item of assessments) addText(assessmentSection,"p","record-body",`${item.dimension}: ${item.value_num ?? item.value_text ?? ""} ${item.rationale ?? ""}`);
   const statusButton=document.createElement("button"); statusButton.type="button"; statusButton.className="secondary-button"; statusButton.textContent="Record status";
   statusButton.addEventListener("click",async()=>{
-    const status=window.prompt("Status: proposed, reported, inferred, corroborated, contested, accepted, rejected, superseded, unresolved, unknown","reported");
+    const status=await requestText("Status: proposed, reported, inferred, corroborated, contested, accepted, rejected, superseded, unresolved, unknown", "reported");
     if(!status)return;
     const payload={schema_version:1,status,scope:"default",rationale:"Recorded from desktop claims panel.",actor_kind:"user"};
-    if(status==="accepted") payload.policy=window.prompt("Acceptance policy (required)");
+    if(status==="accepted") {\n      const policy=await requestText("Acceptance policy (required)");\n      if(!policy?.trim()) return;\n      payload.policy=policy.trim();\n    }
     await api(`/v1/claims/${encodeURIComponent(claim.id)}/status${state.selectedProjectId ? "?project_id="+encodeURIComponent(state.selectedProjectId) : ""}`,{method:"POST",body:payload});
     await showClaim(claim.id);
   });
   target.append(statusButton);
 }
 async function createOpenQuestion() {
-  const text=window.prompt("What question remains unresolved?");
+  const text=await requestText("What question remains unresolved?");
   if(!text?.trim()) return;
-  const related=window.prompt("Related claim ID (optional)") || null;
+  const related=await requestText("Related claim ID (optional)") || null;
   await api("/v1/open-questions",{method:"POST",body:{schema_version:1,project_id:state.selectedProjectId||null,text:text.trim(),related_claim_id:related}});
   await loadOpenQuestions();
 }
