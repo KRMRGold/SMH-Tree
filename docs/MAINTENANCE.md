@@ -99,6 +99,18 @@
 - **Schema:** migration 0003 enforces scope-id shape and same-scope active supersession links at the database boundary.
 - **Acceptance:** ACCEPTED — CI, user-reported Windows verification, and release-tag completion have been recorded.
 
+### M5 — Context compiler and inspector (candidate; not yet accepted)
+
+- **Candidate backend version:** 0.5.0.
+- **Latest implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
+- **CI:** PASS — [Backend CI #55](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131448849), Python 3.12.16, pytest 9.2.0, 63 passed in 3.02s. This run tested the exact implementation commit above.
+- **Windows verification:** NOT RUN in this session. Required human action: from `backend/`, run `uv run pytest` on Windows and report the result.
+- **Release tag:** `backend-v0.5.0` has not yet been created. The current GitHub integration can read refs but does not expose tag creation; create the tag only after the Windows run passes, targeting the final M5 candidate commit.
+- **Implemented:** deterministic provider-neutral context compilation; fixed mandatory system instructions; project description context; M4-scoped active memory with FTS relevance, importance/preference inclusion, stable ordering and remote-sharing filtering; M1 branch history selection; head-and-tail current-message truncation; token budgeting and omission metadata; immutable one-per-run snapshots via migration 0004; authenticated stored-packet inspector at `GET /v1/runs/{id}/context`.
+- **Run lifecycle:** context compilation and provider streaming are separate run steps. A successfully compiled packet is snapshotted before remote authorization/audit and before provider I/O; snapshots remain after provider failure or cancellation.
+- **Deferred:** epistemic sources (M6), model-specific context profiles, model-based ranking, embeddings, vector search, background memory curation, agents and LangGraph (M7).
+- **Acceptance:** PENDING — CI is green; Windows verification and the candidate tag remain outstanding.
+
 ## Architecture and invariants
 
 - SQLite is the canonical store; no ORM.
@@ -113,7 +125,7 @@
 ## Known limitations
 
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
-- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. Context compiler and inspector remain M5; epistemic API remains M6.
+- M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are implemented in candidate 0.5.0; Windows verification and the release tag are pending. Epistemic API remains M6.
 - No desktop shell or packaging yet (M8–M9).
 - M0's candidate tag was intentionally omitted with user acceptance.
 - Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M9 work.
@@ -172,8 +184,8 @@
 ## Current work and next steps
 
 - **Current accepted milestone:** M4 — Scoped memory (backend 0.4.1).
-- **Next milestone:** M5 — Context compiler and inspector. The M5 design is refined in `Build-spec.md` section 8 (spec 0.3.0); implementation has not started.
-- **M5 decisions:** deterministic compiler; M4 permissions and branch-history resolution reused; current user message may be deterministically head-and-tail truncated only after optional context is excluded; system instructions are never truncated; one immutable snapshot per successfully compiled chat run; inspector reads the stored packet rather than recompiling.
-- **M5 deferred:** epistemic sources (M6), model-based ranking, embeddings, background formalization/curation, agents and LangGraph (M7).
-- **Next implementation sequence:** define packet/domain contracts and configured context limits; implement candidate retrieval and deterministic selection; add budgeting/truncation and provider-neutral rendering; add migration 0004 and immutable snapshot repository; wire compilation and remote authorization/audit into chat; add inspector endpoint; run the full regression and M5 acceptance suites.
+- **Current milestone:** M5 — Context compiler and inspector, candidate backend 0.5.0. The implementation and CI suite are complete; M5 is not accepted yet.
+- **M5 decisions:** deterministic compiler; M4 permissions and branch-history resolution reused; current user message is head-and-tail truncated only when mandatory system + user content exceeds budget; system instructions are never truncated; one immutable snapshot per successfully compiled chat run; inspector reads the stored packet rather than recompiling.
+- **M5 deferred:** epistemic sources (M6), model-specific context profiles, model-based ranking, embeddings, background formalization/curation, agents and LangGraph (M7).
+- **Next acceptance steps:** run `uv run pytest` from `backend/` on Windows; if it passes, create `backend-v0.5.0` against the final candidate commit; then update this record and `docs/TEST_RECORD.md` to mark M5 accepted.
 - Keep this file as the single maintenance record; update it in place after each accepted milestone.
