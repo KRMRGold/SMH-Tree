@@ -1,16 +1,20 @@
 # Test Record
 
-## Current candidate — M4 (not yet accepted)
+## Latest accepted run — M4
 
-- **Failed candidate:** backend 0.4.0, commit 41ae1363fd2ceb79fa9e117b1d237d4db526dc84; CI run #43116076972: 53 passed, 1 failed. The failing API test created ancestor memory after the fork and incorrectly expected it to be inherited.
-- **Repair candidate:** backend 0.4.1, candidate commit 0cfbbcc0d34a74264628a15f76275fe115ce787f. Corrected the test setup and added a fork-of-fork test proving each ancestor receives its own fork-time cutoff.
+- **Accepted version:** backend 0.4.1 (M4 — Scoped memory).
+- **Implementation commit:** 0cfbbcc0d34a74264628a15f76275fe115ce787f.
+- **Accepted documentation commit:** f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
+- **Failed candidate:** backend 0.4.0, commit 41ae1363fd2ceb79fa9e117b1d237d4db526dc84; CI run #43116076972: 53 passed, 1 failed because the test created ancestor memory after the fork and expected it to be inherited.
+- **Failed-candidate tag:** `backend-v0.4.0` → 41ae1363fd2ceb79fa9e117b1d237d4db526dc84.
+- **Accepted tag:** `backend-v0.4.1` → f4c6e9ad7bdee58623f60a0e5c3186b5b687d5a5.
+- **Tag evidence:** User confirmed tags were pushed; prior session reported their targets verified. Current connector cannot independently enumerate tag refs.
+- **Run date:** 2026-11-11.
 - **Automated CI:** PASS — [Backend CI #15](https://github.com/KRMRGold/SMH-Tree/actions/runs/43116317844), Python 3.12.16, pytest 9.2.0, 55 passed in 3.15s.
-- **Windows verification:** pending user-run uv run pytest on the final candidate checkout.
-- **Tags:** pending. backend-v0.4.0 must preserve the failed candidate commit; backend-v0.4.1 will target the accepted documentation follow-up commit.
+- **Windows verification:** PASS — user-reported Windows (`win32`), Python 3.12.13, `uv run pytest`, 55 passed in 6.87s.
 - **Schema:** migration 0003 adds database-enforced memory scope and supersession invariants.
-- **Coverage added:** scoped CRUD, FTS5 search, branch ancestry fork-time cutoffs, sibling exclusion, remote global/user sharing, lifecycle transitions, and API authorization.
-- **Acceptance status:** CANDIDATE — CI passes; do not accept until Windows verification and backend-v0.4.0 / backend-v0.4.1 tag targets are verified.
-
+- **Coverage:** scoped CRUD, FTS5 search, branch ancestry fork-time cutoffs, sibling exclusion, remote global/user sharing, lifecycle transitions, database invariants, and API authorization.
+- **Acceptance status:** ACCEPTED — automated CI passed; Windows verification and tag completion were confirmed by the user, with tag target verification reported in the preceding session.
 
 ## Latest accepted run — M3
 
