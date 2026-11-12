@@ -17,6 +17,8 @@ class Settings:
     data_dir: Path
     ollama_base_url: str = "http://127.0.0.1:11434"
     openai_compat_base_url: str = "https://api.openai.com/v1"
+    default_max_input_tokens: int = 8192
+    default_reserve_output_tokens: int = 1024
 
 
 def resolve_data_dir(
@@ -62,6 +64,8 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         openai_compat_base_url=env.get(
             "COGPLAT_OPENAI_COMPAT_BASE_URL", "https://api.openai.com/v1"
         ),
+        default_max_input_tokens=int(env.get("COGPLAT_DEFAULT_MAX_INPUT_TOKENS", "8192")),
+        default_reserve_output_tokens=int(env.get("COGPLAT_DEFAULT_RESERVE_OUTPUT_TOKENS", "1024")),
     )
 
 
