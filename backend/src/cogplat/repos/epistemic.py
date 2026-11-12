@@ -167,7 +167,7 @@ def get_claim(connection: sqlite3.Connection, claim_id: str):
 
     statuses = connection.execute(
         "SELECT * FROM claim_status_events WHERE claim_id = ? "
-        "ORDER BY created_at DESC, id DESC", (claim_id,)
+        "ORDER BY rowid DESC", (claim_id,)
     ).fetchall()
     latest_status: dict[str, dict[str, object]] = {}
     for row in statuses:
@@ -176,7 +176,7 @@ def get_claim(connection: sqlite3.Connection, claim_id: str):
 
     assessments = connection.execute(
         "SELECT * FROM claim_assessments WHERE claim_id = ? "
-        "ORDER BY created_at DESC, id DESC", (claim_id,)
+        "ORDER BY rowid DESC", (claim_id,)
     ).fetchall()
     latest_assessment: dict[str, dict[str, object]] = {}
     for row in assessments:
@@ -187,7 +187,7 @@ def get_claim(connection: sqlite3.Connection, claim_id: str):
         "SELECT e.*, s.kind AS source_kind, s.title AS source_title, "
         "s.uri AS source_uri, s.project_id AS source_project_id "
         "FROM evidence e JOIN sources s ON s.id = e.source_id "
-        "WHERE e.claim_id = ? ORDER BY e.created_at, e.id", (claim_id,)
+        "WHERE e.claim_id = ? ORDER BY e.rowid", (claim_id,)
     ).fetchall()
 
     relation_rows = connection.execute(
@@ -195,7 +195,7 @@ def get_claim(connection: sqlite3.Connection, claim_id: str):
         "FROM claim_relations r JOIN claims c ON c.id = "
         "CASE WHEN r.from_claim_id = ? THEN r.to_claim_id ELSE r.from_claim_id END "
         "WHERE r.from_claim_id = ? OR r.to_claim_id = ? "
-        "ORDER BY r.created_at, r.id", (claim_id, claim_id, claim_id)
+        "ORDER BY r.rowid", (claim_id, claim_id, claim_id)
     ).fetchall()
 
     claim["current_status"] = list(latest_status.values())
