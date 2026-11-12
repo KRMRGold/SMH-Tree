@@ -89,7 +89,7 @@ def test_chat_uses_checkpointed_graph_and_preserves_sse_contract(tmp_path):
         if line.startswith("data: ") and "run_id" in line
     ][-1]
     assert done["message"]["content"] == "hello world"
-    connection = sqlite3.connect(tmp_path / "app.db")
+    connection = sqlite3.connect(tmp_path / "checkpoints.db")
     try:
         tables = {
             row[0] for row in connection.execute(
