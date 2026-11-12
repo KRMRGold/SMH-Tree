@@ -208,6 +208,8 @@ def get_claim(connection: sqlite3.Connection, claim_id: str):
 def list_claims(connection: sqlite3.Connection, project_id: str | None,
                 query: str | None, limit: int, offset: int):
     fts = _fts_query(query)
+    if query is not None and query.strip() and fts is None:
+        return []
     params: list[object] = []
     visibility = "c.project_id IS NULL" if project_id is None else "(c.project_id IS NULL OR c.project_id = ?)"
     if project_id is not None:
