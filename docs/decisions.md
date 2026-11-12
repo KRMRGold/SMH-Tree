@@ -60,5 +60,6 @@ This is the project's living decision log. Add concise entries when an implement
 - **Source handling:** M6 registers source metadata and content hashes and stores evidence excerpts/locators. It does not fetch URLs, crawl websites, or ingest arbitrary files; those are separate import/retrieval capabilities.
 - **Context selection:** Add relevant claims by deterministic FTS match against the current user message. Include current scoped status and a contested claim's visible contradiction partner together; include whole claim records only, record budget exclusions, and preserve M5's final packet budget invariant.
 - **Remote use:** Claims follow the existing project visibility rule and the explicit per-turn remote gate. M6 adds no separate claim-sharing toggle; every remote transmission remains covered by M3 audit.
+- **Unified search:** `GET /v1/search` returns permission-filtered messages, active memory, and claims. Message search requires a branch context and uses resolved branch history; `scope` filters memory scope only. Source metadata is not full-text indexed in M6.
 - **Scope boundary:** No argument/premise graph, automated truth judgment, model-based claim extraction, background curation, graph database, or LangGraph work in M6. Model extraction remains M7 and must create proposed records with provenance.
 
