@@ -1,5 +1,18 @@
 # Maintenance
 
+## M8 — Desktop shell candidate (in progress)
+
+- **Candidate desktop version:** 0.8.0.
+- **Candidate backend version:** 0.8.0 (backward-compatible remote-memory settings API addition).
+- **Latest passing candidate:** `e0a742b87ac25d55b31c811e4b05b78ab96276d5`.
+- **Branch:** `m8-desktop-shell`; not merged into `main`.
+- **Implemented:** Electron main/preload/renderer foundation; backend process supervision; context inspector for the exact stored context snapshot; scoped memory list/filter/create/lifecycle controls; claims with status, evidence, assessments, relationship display, contradiction comparison, and open-question management; settings for remote memory sharing and provider credentials.
+- **Credential boundary:** provider keys are stored in an encrypted file under Electron user data using `safeStorage`; insecure `basic_text` fallback is rejected. Keys are injected by the main process only into requests for the matching provider and never exposed to renderer JavaScript, SQLite, logs, or context snapshots.
+- **Remote-sharing settings:** authenticated API endpoints persist global/user memory-sharing flags in the existing `settings` table. Both default off; strict boolean input is required.
+- **Automated verification:** Backend CI [#43306938788](https://github.com/KRMRGold/SMH-Tree/actions/runs/43306938788) PASS — 85 tests. Desktop CI [#43306938752](https://github.com/KRMRGold/SMH-Tree/actions/runs/43306938752) PASS — 13 Node tests plus JavaScript syntax checks. Both runs target the candidate commit above.
+- **Not yet accepted:** Windows runtime verification, actual Electron launch and UI interaction, secureStorage behavior on the target Windows environment, and Windows child-process-tree cleanup remain unverified. M8 must not be marked accepted until the required platform checks are complete.
+- **Next:** run the desktop app on Windows, exercise the context/memory/claims/settings views and remote-provider key flow with a fake or test provider, verify clean shutdown leaves no backend process, fix any issues, then update the test record. Packaging and installer work remain M9.
+
 ## Current accepted state
 
 - **Project:** SMH-Tree
