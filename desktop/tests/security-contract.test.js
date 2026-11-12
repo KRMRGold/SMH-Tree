@@ -36,3 +36,31 @@ test("main process injects the bearer token and rejects non-API paths", async ()
   assert.match(main, /requestPath\.startsWith\("\/v1\/"\)/);
   assert.match(main, /url\.origin !== connection\.baseUrl/);
 });
+
+
+test("provider credentials stay behind OS-backed encryption in the main process", async () => {
+  const main = await read("main/main.js");
+  const preload = await read("preload/preload.js");
+  const renderer = await read("renderer/renderer.js");
+  assert.match(main, /safeStorage\.isEncryptionAvailable\(\)/);
+  assert.match(main, /safeStorage\.encryptString/);
+  assert.match(main, /safeStorage\.decryptString/);
+  assert.match(main, /X-Provider-API-Key/);
+  assert.match(preload, /setProviderApiKey/);
+  assert.doesNotMatch(renderer, /safeStorage|node:fs|electron/);
+  assert.doesNotMatch(main, /localStorage|app\.db.*api.?key/i);
+});
+
+test("renderer exposes context, memory, claims, and settings views without HTML injection", async () => {
+  const html = await read("renderer/index.html");
+  const renderer = await read("renderer/renderer.js");
+  for (const view of ["context", "memory", "claims", "settings"]) {
+    assert.match(html, new RegExp(`data-view="${view}"`));
+  }
+  assert.match(renderer, /excluded_sources/);
+  assert.match(renderer, /\/v1\/runs\//);
+  assert.match(renderer, /\/v1\/memory/);
+  assert.match(renderer, /\/v1\/claims/);
+  assert.match(renderer, /\/v1\/settings/);
+  assert.doesNotMatch(renderer, /\.innerHTML\b/);
+});
