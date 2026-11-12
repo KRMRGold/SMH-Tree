@@ -4,7 +4,8 @@ A local-first desktop platform for persistent, branching, memory-backed AI conve
 
 ## Project status
 
-**Current milestone:** M1 — Conversations and branching (candidate backend 0.1.0).
+**Current accepted milestone:** M4 — Scoped memory (backend 0.4.1).
+The backend passed 55 automated tests in CI and 55 tests in the user's Windows environment. The failed M4 candidate is preserved as `backend-v0.4.0`; the accepted candidate is `backend-v0.4.1`.
 
 The authoritative implementation plan is [Build-spec.md](Build-spec.md). The broader product vision is [Distributed-Cognitive-Architecture.md](Distributed-Cognitive-Architecture.md). Accepted behavior and test history are recorded in [docs/MAINTENANCE.md](docs/MAINTENANCE.md) and [docs/TEST_RECORD.md](docs/TEST_RECORD.md).
 
@@ -49,4 +50,4 @@ All routes require bearer authentication.
 - GET /v1/branches/{id}/messages — resolved inherited history.
 - POST /v1/branches/{id}/messages — append a message to a branch.
 
-Chat providers and streaming arrive in M2. Memory, epistemic workflows, and the desktop shell are later milestones.
+The backend also provides Ollama and OpenAI-compatible provider adapters, streamed chat, remote-transmission authorization and audit, and scoped memory APIs with search and lifecycle management. Next: M5 context compiler and inspector. Epistemic workflows and the desktop shell remain later milestones.
