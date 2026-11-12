@@ -63,3 +63,15 @@ This is the project's living decision log. Add concise entries when an implement
 - **Unified search:** `GET /v1/search` returns permission-filtered messages, active memory, and claims. Message search requires a branch context and uses resolved branch history; `scope` filters memory scope only. Source metadata is not full-text indexed in M6.
 - **Scope boundary:** No argument/premise graph, automated truth judgment, model-based claim extraction, background curation, graph database, or LangGraph work in M6. Model extraction remains M7 and must create proposed records with provenance.
 
+
+
+## M7 decisions
+
+- **Workflow scope:** M7 adds exactly two LangGraph workflows: `chat_turn` and explicitly triggered `extract_claims`. LangGraph is an orchestration/checkpoint layer only; it does not introduce agents or a new canonical data store.
+- **Checkpoint storage:** Use the official async SQLite checkpointer in the existing `app.db`; `thread_id` is the canonical run ID. Checkpoint tables are package-owned. Add `langgraph`, `langgraph-checkpoint-sqlite`, and `aiosqlite` as justified runtime dependencies for the async FastAPI path.
+- **Feature control:** `COGPLAT_WORKFLOWS_ENABLED` controls the LangGraph path. The pre-existing chat path remains the compatibility fallback when disabled; explicit extraction is unavailable while disabled.
+- **Extraction contract:** Extraction is a user-triggered operation on one canonical message, not background work. Validate provider output with provider-independent Pydantic models. Each proposed claim must cite an exact substring of its source message and is stored with extraction origin, source/evidence provenance, a `derived_from` link to the message, and a `produced_by` link to the run. Evidence stance is `context`; extraction does not imply support or truth.
+- **Idempotency:** Canonical extraction output and all claim/evidence/link writes commit atomically with the run output. A retry reuses persisted output. Remote audit is idempotent per run and rejects a retry whose authorized packet differs from the original.
+- **Failure semantics:** LangGraph resumes from the last successful node. Chat preserves the existing SSE contract and does not persist partial assistant output. A provider call must not be repeated after its result has been durably recorded.
+- **Structured output:** Do not require provider-specific structured-output APIs in M7. Parse and validate a common JSON contract locally; malformed output fails without partial claim writes.
+- **Deferred:** Argument/premise graphs, automated truth judgments, confidence scores, autonomous/background curation, graph databases, vector search, and multi-agent orchestration remain outside M7 and the MVP.
