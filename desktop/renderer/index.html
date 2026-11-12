@@ -132,5 +132,16 @@
         </section>
       </main>
     </div>
+    <dialog id="input-dialog" class="input-dialog" aria-labelledby="input-dialog-heading">
+      <form method="dialog" id="input-dialog-form">
+        <h2 id="input-dialog-heading">Enter a value</h2>
+        <label for="input-dialog-value" id="input-dialog-label">Value</label>
+        <textarea id="input-dialog-value" rows="3"></textarea>
+        <div class="input-dialog-actions">
+          <button type="submit" value="cancel" formnovalidate class="secondary-button">Cancel</button>
+          <button type="submit" value="submit" class="primary-button">Continue</button>
+        </div>
+      </form>
+    </dialog>
   </body>
 </html>
