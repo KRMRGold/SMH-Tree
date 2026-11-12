@@ -169,14 +169,15 @@ Failed and superseded candidates remain in Git history; their version identities
 - Desktop and end-to-end flows remain M8–M9 work.
 
 
-## Current candidate — M7 (not yet accepted)
+## M7 accepted — checkpointed workflows and explicit claim extraction
 
-- **Candidate version:** backend 0.7.0.
-- **Candidate commit:** `9d525efd333812abdbca17e1a22efff610f063d0`.
+- **Accepted version:** backend 0.7.0.
+- **Candidate implementation and annotated tag target:** `9d525efd333812abdbca17e1a22efff610f063d0`.
 - **Run date:** 2026-11-12.
 - **Automated CI:** PASS — [Backend CI #157](https://github.com/KRMRGold/SMH-Tree/actions/runs/43291634423), Python 3.12.16, pytest 9.2.0, 83 passed in 6.35s.
-- **Windows verification:** NOT RUN in this session; requires the user's Windows checkout.
-- **Release tag:** NOT CREATED; candidate acceptance remains pending Windows verification.
-- **Coverage added:** checkpointed chat graph preserves SSE, context snapshots, remote authorization, completed-only assistant persistence, and failure resume; checkpoint persistence survives app recreation; extraction validates strict JSON and exact source excerpts, persists proposed claims with evidence plus `derived_from`/`produced_by` provenance, rejects malformed/non-verbatim output without partial claims, enforces remote opt-in, and respects the workflow feature flag.
+- **Windows verification:** PASS — user-reported Windows `uv run pytest`, all 83 tests passed. The tested local checkout was `45175c2713f6edcb95833238a24cc70167c84a0f`, two documentation-only commits ahead of the CI candidate. GitHub commit comparison confirmed that neither intervening commit changed application code.
+- **Release tag:** PASS — annotated tag `backend-v0.7.0` was pushed by the user. Its GitHub ref resolves to annotated tag object `50d1a44173b5e5c2fc2eb87d3d62c0ea82704345`, which targets the exact candidate commit `9d525efd333812abdbca17e1a22efff610f063d0`.
+- **Coverage added:** checkpointed chat graph preserves the SSE contract, context snapshots, remote authorization, completed-only assistant persistence, and failure resume; checkpoint persistence survives app recreation; extraction validates strict JSON and exact source excerpts, persists proposed claims with evidence plus `derived_from`/`produced_by` provenance, rejects malformed/non-verbatim output without partial claims, enforces remote opt-in, and respects the workflow feature flag.
 - **Persistence:** migration 0006 stores remote packet SHA-256 and enforces one audit row per run. LangGraph-owned tables live in a separate `checkpoints.db` file beside canonical `app.db`.
-- **Acceptance status:** CANDIDATE — CI passed; Windows verification and release tag are pending.
+- **Acceptance status:** ACCEPTED — CI, user-reported Windows verification, and annotated release tag verified.
+
