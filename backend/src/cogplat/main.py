@@ -18,6 +18,7 @@ from cogplat.db.connection import apply_migrations, connect_db
 from cogplat.domain.chat import ChatRequest, ClaimExtractionRequest
 from cogplat.domain.context import ContextCompileError
 from cogplat.domain.memory import MemoryCreate, MemoryLifecycleUpdate
+from cogplat.domain.time import utc_now
 from cogplat.domain.epistemic import (
     ClaimAssessmentCreate, ClaimCreate, ClaimRelationCreate, ClaimStatusCreate,
     EvidenceCreate, OpenQuestionCreate, OpenQuestionUpdate, SourceCreate,
@@ -797,9 +798,10 @@ def create_app(
         with connection:
             for key, value in payload.items():
                 connection.execute(
-                    "INSERT INTO settings(key, value_json) VALUES (?, ?) "
-                    "ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json",
-                    (key, json.dumps(value)),
+                    "INSERT INTO settings(key, value_json, updated_at) VALUES (?, ?, ?) "
+                    "ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json, "
+                    "updated_at=excluded.updated_at",
+                    (key, json.dumps(value), utc_now()),
                 )
         return get_settings(connection)
 
