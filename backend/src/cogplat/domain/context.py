@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+import math
 from typing import Protocol, Sequence
 
 from cogplat.domain.chat import ChatMessage
@@ -32,7 +33,7 @@ class DefaultTokenCounter:
     """Conservative character-based estimate with per-message role overhead."""
 
     def count_messages(self, messages: Sequence[ChatMessage]) -> int:
-        return sum(4 + ((len(message.content) + 3) // 4) for message in messages)
+        return sum(4 + math.ceil(len(message.content) / 3.5) for message in messages)
 
 
 @dataclass(slots=True)
