@@ -452,7 +452,11 @@ async function showClaim(claimId) {
     const status=await requestText("Status: proposed, reported, inferred, corroborated, contested, accepted, rejected, superseded, unresolved, unknown", "reported");
     if(!status)return;
     const payload={schema_version:1,status,scope:"default",rationale:"Recorded from desktop claims panel.",actor_kind:"user"};
-    if(status==="accepted") {\n      const policy=await requestText("Acceptance policy (required)");\n      if(!policy?.trim()) return;\n      payload.policy=policy.trim();\n    }
+    if(status==="accepted") {
+      const policy=await requestText("Acceptance policy (required)");
+      if(!policy?.trim()) return;
+      payload.policy=policy.trim();
+    }
     await api(`/v1/claims/${encodeURIComponent(claim.id)}/status${state.selectedProjectId ? "?project_id="+encodeURIComponent(state.selectedProjectId) : ""}`,{method:"POST",body:payload});
     await showClaim(claim.id);
   });
