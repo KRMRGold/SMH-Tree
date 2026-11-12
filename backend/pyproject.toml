@@ -1,6 +1,6 @@
 [project]
 name = "cogplat"
-version = "0.6.1"
+version = "0.7.0"
 description = "Local-first branching, memory-backed AI conversation platform"
 requires-python = ">=3.12"
 dependencies = [
