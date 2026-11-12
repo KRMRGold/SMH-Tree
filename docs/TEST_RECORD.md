@@ -1,16 +1,16 @@
 # Test Record
 
-## M5 candidate run — NOT ACCEPTED
+## M5 verification — implementation passed; release tag pending
 
 - **Candidate version:** backend 0.5.0.
 - **Implementation commit:** fdf74b171d0ff838db29002df5f38ac0dbe3b7b5.
 - **Latest candidate verification commit:** 31ad365f2a94bbe69bed5772dd34449c5fd758ec.
 - **Run date:** 2026-11-12 UTC.
-- **Automated CI:** PASS — [Backend CI #62](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131667945), Python 3.12.16, pytest 9.2.0, 64 passed in 3.06s.
+- **Automated CI:** PASS — [Backend CI #64](https://github.com/KRMRGold/SMH-Tree/actions/runs/43131791949), Python 3.12.16, pytest 9.2.0, 64 passed in 2.98s.
 - **Coverage added:** deterministic packet compilation; current-message deduplication; user head-and-tail truncation with original storage preserved; system overflow; project/memory/history selection; remote memory filtering and explicit sharing settings; newest-first history and omission marker; snapshot creation and immutability; inspector authentication and retrieval; exact remote audit refs/byte count; snapshots retained after provider failure/cancellation; existing M0–M4 regression suite.
-- **Windows verification:** NOT RUN. Required action: run `uv run pytest` from `backend/` on Windows and report the result.
-- **Release tag:** `backend-v0.5.0` not yet created; pending Windows verification and final candidate tag creation.
-- **Acceptance status:** NOT ACCEPTED — CI passed, but Windows verification and the required release tag remain outstanding.
+- **Windows verification:** PASS — user-reported `uv run pytest` from `backend/`, Windows (`win32`), Python 3.12.13, pytest 9.2.0, 64 passed in 9.69s.
+- **Release tag:** `backend-v0.5.0` not yet created. Create it at candidate verification commit `31ad365f2a94bbe69bed5772dd34449c5fd758ec`; the available GitHub integration cannot create tags.
+- **Acceptance status:** Implementation and both CI/Windows test gates passed. Release bookkeeping remains pending until the required tag is created.
 
 ## Latest accepted run — M4
 
