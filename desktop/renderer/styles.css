@@ -14,13 +14,17 @@
 }
 
 * { box-sizing: border-box; }
-body { min-width: 760px; min-height: 100vh; margin: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { min-width: 760px; height: 100vh; margin: 0; }
 button, input, select, textarea { font: inherit; }
 button, select { cursor: pointer; }
 
-.app-shell { min-height: 100vh; display: grid; grid-template-columns: 270px minmax(0, 1fr); }
+.app-shell {
+  width: 100%; height: 100vh; min-height: 0; overflow: hidden;
+  display: grid; grid-template-columns: 270px minmax(0, 1fr);
+}
 .sidebar {
-  min-height: 100vh;
+  height: 100vh; min-height: 0; overflow: hidden;
   display: flex;
   flex-direction: column;
   padding: 24px 16px 16px;
@@ -51,7 +55,11 @@ select, input, textarea {
   color: var(--text); background: #201d28; border: 1px solid #3a3443; border-radius: 8px;
 }
 #project-select { width: 100%; padding: 10px 11px; font-size: 12px; }
-.conversation-list { display: flex; flex-direction: column; gap: 4px; }
+.conversation-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.conversation-list {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 4px;
+}
 .conversation-item {
   width: 100%; padding: 10px 11px; text-align: left; border: 1px solid transparent;
   border-radius: 8px; background: transparent; color: #c9c2d2; font-size: 12px;
@@ -75,8 +83,9 @@ select, input, textarea {
 .status-dot[data-state="ready"] { background: #8cc49d; }
 .status-dot[data-state="error"] { background: #d47d85; }
 
-.workspace { min-width: 0; min-height: 100vh; display: flex; flex-direction: column; }
+.workspace { min-width: 0; width: 100%; height: 100vh; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 .topbar {
+  flex: 0 0 auto;
   min-height: 98px; display: flex; align-items: center; justify-content: space-between;
   gap: 24px; padding: 20px 30px; border-bottom: 1px solid var(--line);
   background: rgba(22, 20, 29, .88);
@@ -102,8 +111,8 @@ h1 { margin: 6px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em;
 }
 .empty-state h2 { margin: 0 0 10px; color: #e2d9ec; font-size: 20px; font-weight: 550; }
 .empty-state p { margin: 0; font-size: 12px; line-height: 1.7; }
-.chat-panel { width: min(980px, 100%); flex: 1; display: flex; flex-direction: column; margin: 0 auto; padding: 26px 34px 22px; }
-.message-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding-bottom: 22px; }
+.chat-panel { width: min(980px, 100%); flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; margin: 0 auto; padding: 26px 34px 22px; }
+.message-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 18px; padding-bottom: 22px; }
 .message { max-width: 82%; display: flex; flex-direction: column; gap: 6px; }
 .message.user { align-self: flex-end; }
 .message.assistant { align-self: flex-start; }
@@ -114,8 +123,8 @@ h1 { margin: 6px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em;
   white-space: pre-wrap; overflow-wrap: anywhere;
 }
 .message.user .message-content { background: #292232; border-color: #45384f; }
-.chat-status { min-height: 20px; color: var(--muted); font-size: 10px; }
-.composer { padding: 13px; border: 1px solid #3a3344; border-radius: 13px; background: #1b1822; }
+.chat-status { flex: 0 0 auto; min-height: 20px; color: var(--muted); font-size: 10px; }
+.composer { flex: 0 0 auto; padding: 13px; border: 1px solid #3a3344; border-radius: 13px; background: #1b1822; }
 .composer textarea {
   width: 100%; min-height: 72px; resize: vertical; padding: 8px 7px;
   border: 0; outline: 0; background: transparent; color: var(--text);
@@ -140,6 +149,7 @@ h1 { margin: 6px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em;
 
 
 .workspace-tabs {
+  flex: 0 0 auto;
   display: flex; gap: 6px; padding: 12px 30px;
   border-bottom: 1px solid var(--line); background: #15131b;
 }
