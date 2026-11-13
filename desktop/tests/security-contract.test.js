@@ -81,7 +81,8 @@ test("renderer uses an in-app dialog instead of unsupported window.prompt", asyn
 
 test("desktop viewport stays fixed while chat and conversation list scroll independently", async () => {
   const css = await read("renderer/styles.css");
-  assert.match(css, /body\s*\{[^}]*height:\s*100vh[^}]*overflow:\s*hidden/s);
+  assert.match(css, /html,\s*body\s*\{[^}]*height:\s*100%[^}]*overflow:\s*hidden/s);
+  assert.match(css, /body\s*\{[^}]*height:\s*100vh/s);
   assert.match(css, /\.app-shell\s*\{[^}]*height:\s*100vh[^}]*overflow:\s*hidden/s);
   assert.match(css, /\.workspace\s*\{[^}]*height:\s*100vh[^}]*overflow:\s*hidden/s);
   assert.match(css, /\.chat-panel\s*\{[^}]*min-height:\s*0[^}]*overflow:\s*hidden/s);
