@@ -14,6 +14,17 @@ This is the project's living decision log. Add concise entries when an implement
 - **API documentation:** Disable FastAPI's default unprotected documentation routes and expose OpenAPI only at authenticated /v1/openapi.json.
 - **Existing design filename:** Preserve Build-spec.md; do not create a duplicate BUILD_SPEC.md.
 
+## Future model lifecycle and routing design
+
+- **Separate responsibilities:** Model Manager owns provider-specific inventory and lifecycle operations; Model Router selects a provider/model for each request. Neither responsibility belongs in the renderer or conversation persistence layer.
+- **Ollama ownership:** Initially detect and connect to an existing Ollama service. SMH-Tree may request individual model load/unload operations but does not start, stop, install, update, or automatically download the Ollama server/models in the first iteration.
+- **Routing progression:** Start with editable model capability profiles and deterministic routing. An optional lightweight classifier may be introduced later as advisory input; deterministic policy remains authoritative.
+- **Selection control:** Support a configured default, per-message override, conversation-level pin, and automatic selection. Show the actual selected model and reason.
+- **Remote boundary:** The existing per-request remote gate remains authoritative. Routing cannot grant remote permission or bypass memory filtering and transmission auditing.
+- **Provenance:** Persist the actual provider/model, selection mode, and concise selection reason with each run. Model changes apply only to future requests.
+- **Resource policy:** Begin with explicit load/unload controls. Defer automatic keep-warm and idle-unload policies until memory-pressure and concurrency behavior are measured.
+- **Schedule:** This is a post-M9 capability. It does not expand M8 or M9 and must not block their acceptance.
+
 ## M1 decisions
 
 - **UUIDv7:** Implement UUIDv7 generation using Python's standard-library uuid.UUID and secrets, because Python 3.12 does not provide uuid.uuid7(). This avoids adding a dependency and keeps ID generation in Python.
