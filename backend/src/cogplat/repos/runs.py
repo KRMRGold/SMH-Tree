@@ -77,6 +77,20 @@ def update_run_input(connection: sqlite3.Connection, run_id: str, input_data: di
     )
 
 
+def get_latest_chat_run_for_branch(
+    connection: sqlite3.Connection, branch_id: str
+) -> dict[str, object] | None:
+    """Return the newest chat run with a persisted context snapshot for a branch."""
+    row = connection.execute(
+        "SELECT r.id FROM runs r "
+        "JOIN context_snapshots cs ON cs.run_id = r.id "
+        "WHERE r.branch_id = ? AND r.kind = 'chat_turn' "
+        "ORDER BY r.created_at DESC, r.rowid DESC LIMIT 1",
+        (branch_id,),
+    ).fetchone()
+    return get_run(connection, str(row["id"])) if row is not None else None
+
+
 def get_run(connection: sqlite3.Connection, run_id: str) -> dict[str, object] | None:
     row = connection.execute(
         "SELECT id, kind, conversation_id, branch_id, status, allow_remote, input_json, "
