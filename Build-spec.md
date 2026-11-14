@@ -1,6 +1,6 @@
 # Cognitive Platform: Build Specification (Desktop MVP)
 
-**Spec version:** 0.4.0. This is a living document: update it in place and let Git history keep prior revisions.
+**Spec version:** 0.5.0. This is a living document: update it in place and let Git history keep prior revisions.
 
 Derived from "Distributed Cognitive Architecture v0.4". The vision document says what the system should become. This document says exactly what to build first, and in what order. Where the two disagree, this document wins for the MVP.
 
@@ -599,7 +599,7 @@ Screens, kept simple:
 2. **Chat**: message list, composer, streaming output, per-message "branch from here", a provider/model picker, and an explicit **"allow remote for this message"** toggle (off by default).
 3. **Context inspector**: shows the last run's packet (what was sent and what was dropped).
 4. **Memory panel**: list, filter by scope, add, edit, mark outdated.
-5. **Claims panel**: claim list with scoped status, evidence, contradictions side by side, and open questions.
+5. **Claims panel**: search and inspect claims, scoped status, evidence, assessments, and relationships; compare contradictions side by side; append status updates; and create/update open questions. M8 does not include desktop authoring controls for claims, sources, evidence, assessments, or claim relationships.
 6. **Settings**: providers, remote-sharing toggles for global/user memory, data location.
 
 No UI framework. Small modules with a tiny event bus. Escape all model and user text (`textContent`, never `innerHTML` for untrusted content).
@@ -661,6 +661,7 @@ Each milestone lists what to build and the tests that must pass.
 
 ## 13. Non-goals (do NOT build in the MVP)
 
+- Full desktop epistemic authoring: manually creating claims or sources, attaching evidence, adding assessments, and creating claim relationships. The backend contracts remain available; the desktop authoring workflows are deferred to the post-MVP extension below.
 - Graphiti, Cognee, Neo4j or any graph database (extension point: `KnowledgeIndex`, section 9).
 - The multi-agent "cognitive network" (Memory Curator, Research, Verification, Argumentation agents). The data model supports them; the agents come after M9.
 - Argument graphs and automated evaluation of arguments.
@@ -671,6 +672,31 @@ Each milestone lists what to build and the tests that must pass.
 - Auto-update, telemetry, code signing.
 
 ---
+
+### Post-MVP extension: epistemic authoring UI
+
+This capability is intentionally outside M0–M9. It must not delay or alter the current M8/M9 acceptance gates. The M8 Claims panel remains an inspection and limited-management surface, not a complete epistemic editor.
+
+**Goal:** let users deliberately create and maintain the epistemic records that the backend already supports, without weakening provenance or append-only history.
+
+**Planned desktop workflows:**
+
+1. **Create claims manually.** Provide a form for claim text and claim type, with optional structured subject/predicate/object and validity dates. Use the selected project scope (or global scope when no project is selected). User-originated claims use the existing backend default origin and initial `reported` status. Do not silently create claims from ordinary chat.
+2. **Explicit message extraction.** Expose the existing M7 extraction endpoint as a deliberate action on one selected message. Show the provider/model choice and preserve the existing per-request remote opt-in. Extracted claims remain `proposed`, cite exact source-message excerpts, and retain their source/evidence and provenance links. No background extraction.
+3. **Register sources and attach evidence.** Allow source metadata to be registered, then attach it to a claim with stance (`supports`, `challenges`, or `context`), optional exact excerpt, and locator. Do not imply that registering a URL fetches or verifies its contents; source retrieval/import is a separate capability.
+4. **Add assessments.** Allow independent assessment dimensions with either a numeric value in the backend's 0–1 range or a text value, plus rationale. Never collapse dimensions into one universal confidence score.
+5. **Create claim relationships.** Allow users to select another visible claim and create supported relation types. A `contradicts` relation requires an explicit contradiction basis. Display both claims without mutating either claim's content or status.
+6. **Review and correct history.** Claims, sources, evidence, assessments, and relations remain append-only. Do not offer edit/delete controls that imply rewriting history. Corrections are represented by additional records or status events, with provenance retained.
+
+**Acceptance criteria for this future feature:**
+
+- Manual claim creation persists in the selected project/global scope with the expected initial status and origin.
+- Source registration and evidence attachment preserve source IDs, stance, excerpt, locator, and scope validation.
+- Assessment dimensions remain independent and append-only; invalid empty values and out-of-range numeric values are rejected.
+- Relationship creation enforces valid target visibility and requires a contradiction basis only for contradictions.
+- Message extraction is explicitly user-triggered, preserves exact-evidence validation and provenance, and cannot bypass remote opt-in.
+- All created records remain visible after app restart and are correctly reflected in claim detail and search.
+- Existing M6/M7 API and persistence invariants continue to pass.
 
 ### Post-MVP extension: local model lifecycle and routing
 
