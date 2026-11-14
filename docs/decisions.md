@@ -23,7 +23,7 @@ This is the project's living decision log. Add concise entries when an implement
 - **Remote boundary:** The existing per-request remote gate remains authoritative. Routing cannot grant remote permission or bypass memory filtering and transmission auditing.
 - **Provenance:** Persist the actual provider/model, selection mode, and concise selection reason with each run. Model changes apply only to future requests.
 - **Resource policy:** Begin with explicit load/unload controls. Defer automatic keep-warm and idle-unload policies until memory-pressure and concurrency behavior are measured.
-- **Schedule:** This is a post-M9 capability. It does not expand M8 or M9 and must not block their acceptance.
+- **Schedule:** This is a post-M10 capability. It does not expand or block acceptance of M8, M9, or M10.
 
 ## M1 decisions
 
@@ -76,7 +76,7 @@ This is the project's living decision log. Add concise entries when an implement
 
 
 
-- **M8 Claims UI boundary and deferred authoring:** The M8 desktop Claims panel is an inspection and limited-management surface: search/select claims, inspect status/evidence/assessments/relationships, compare contradictions, append status events, and create/update open questions. Manual claim/source creation, evidence attachment, assessment creation, relationship authoring, and a UI for explicit M7 message extraction are deferred beyond M9. This is a deliberate scope boundary, not a missing M8 acceptance item. The future UI must preserve M6/M7 scope, provenance, remote opt-in, validation, and append-only history.
+- **M8 Claims UI boundary and deferred authoring:** The M8 desktop Claims panel is an inspection and limited-management surface: search/select claims, inspect status/evidence/assessments/relationships, compare contradictions, append status events, and create/update open questions. Manual claim/source creation, evidence attachment, assessment creation, relationship authoring, and a UI for explicit M7 message extraction are assigned to M9, after M8 acceptance. This is a deliberate scope boundary, not a missing M8 acceptance item. The future UI must preserve M6/M7 scope, provenance, remote opt-in, validation, and append-only history.
 
 ## M7 decisions
 
@@ -88,3 +88,11 @@ This is the project's living decision log. Add concise entries when an implement
 - **Failure semantics:** LangGraph resumes from the last successful node. Chat preserves the existing SSE contract and does not persist partial assistant output. A provider call must not be repeated after its result has been durably recorded.
 - **Structured output:** Do not require provider-specific structured-output APIs in M7. Parse and validate a common JSON contract locally; malformed output fails without partial claim writes.
 - **Deferred:** Argument/premise graphs, automated truth judgments, confidence scores, autonomous/background curation, graph databases, vector search, and multi-agent orchestration remain outside M7 and the MVP.
+
+
+## M9/M10 milestone sequencing decision
+
+- **M9 — Epistemic Authoring UI:** promote the previously post-MVP authoring design into an explicit MVP milestone. It exposes deliberate manual claim creation, source registration, evidence attachment, independent assessments, claim relationships, and user-triggered M7 extraction while preserving M6/M7 scope, provenance, validation, remote opt-in, and append-only history.
+- **M10 — Packaging and E2E:** move the existing PyInstaller sidecar, Electron Forge installer, clean-Windows-machine validation, and Playwright smoke tests to M10.
+- **Acceptance/version boundary:** M8 remains unchanged and must be accepted before M9 begins. M9 must be accepted before M10 begins. The MVP `1.0.0` transition and S11 milestone-document gate occur only after M10 is accepted.
+- **Deferred beyond MVP:** Model Manager and Model Router remain post-M10; this schedule change does not pull them into M9 or M10.
