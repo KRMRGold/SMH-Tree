@@ -1,6 +1,6 @@
 # Cognitive Platform: Build Specification (Desktop MVP)
 
-**Spec version:** 0.3.0. This is a living document: update it in place and let Git history keep prior revisions.
+**Spec version:** 0.4.0. This is a living document: update it in place and let Git history keep prior revisions.
 
 Derived from "Distributed Cognitive Architecture v0.4". The vision document says what the system should become. This document says exactly what to build first, and in what order. Where the two disagree, this document wins for the MVP.
 
@@ -671,6 +671,48 @@ Each milestone lists what to build and the tests that must pass.
 - Auto-update, telemetry, code signing.
 
 ---
+
+### Post-MVP extension: local model lifecycle and routing
+
+This capability is intentionally outside M0–M9. It must not delay or alter the current M8/M9 acceptance gates.
+
+**Goal:** make local models easy to discover, load, unload, and select, then allow SMH-Tree to route individual tasks to suitable models without coupling conversations to one provider or model.
+
+**Separate responsibilities:**
+
+1. **Model Manager** — provider-specific lifecycle and availability operations. For Ollama, discover installed models and currently loaded models, request a model to load, request it to unload, and report runtime availability/resource metadata where the runtime exposes it.
+2. **Model Router** — choose a provider/model for a request based on task requirements, model capability profiles, user preferences, remote permissions, current availability, and resource constraints. The router does not generate the user-facing answer.
+
+**Implementation progression:**
+
+- **Manual management first:** show whether the Ollama service is reachable, list installed and loaded models, and provide explicit load/unload actions. Detect and connect to an existing Ollama service; do not take ownership of starting, stopping, installing, or updating the Ollama server in the first iteration. Do not automatically download models.
+- **Model profiles:** maintain editable profiles for task capabilities (general conversation, coding, reasoning, long-context, vision, tool calling, embeddings), context limits, operational constraints, and user preference. Do not infer capabilities or context capacity solely from model names.
+- **Deterministic routing:** begin with transparent rules. Consider task category, required modalities/tools, configured model profiles, whether a model is installed and available, remote permission, and local resource constraints. Keep a configured default/fallback model.
+- **User control:** support automatic selection, a one-message override, and a conversation-level pinned model. Show the selected provider/model and a concise reason for each automatic choice.
+- **Intelligent routing later:** optionally use a lightweight classifier to categorize ambiguous tasks and recommend a model. The classifier is advisory input to deterministic policy, not the authority for permissions, resource limits, or remote transmission. Prefer a local classifier when available.
+- **Lifecycle policy later:** add configurable keep-warm and idle-unload behavior only after measuring actual memory pressure and concurrent-request behavior. Do not load every installed model by default.
+
+**Safety and correctness invariants:**
+
+- The existing remote gate remains authoritative. Routing must never turn a local request into a remote transmission unless that specific request explicitly permits remote processing; existing memory filtering and transmission auditing remain in force.
+- A requested or automatically selected model must be validated against the provider's current model inventory before dispatch.
+- If no eligible model is available, use the configured eligible fallback or explain the blocker; never silently choose an unauthorized remote model.
+- A model switch applies to the new request only. It must not rewrite prior messages, context snapshots, or run provenance.
+- Persist the actual provider/model used and the selection mode/reason with each run so the result remains inspectable and reproducible.
+- Keep provider-specific lifecycle operations behind adapters. The conversation and workflow layers should depend on stable model-management and routing contracts, not Ollama-specific API details.
+- Do not introduce a multi-agent framework solely for model routing.
+
+**Initial acceptance criteria for this future feature:**
+
+- Ollama service availability is reported without the desktop app spawning a second Ollama server.
+- Installed and currently loaded models are distinguishable.
+- User can load and unload an installed model and see success/failure state.
+- Profiles and default-model settings persist across app restarts.
+- Manual override and conversation pinning work and are visible.
+- Deterministic routing chooses only eligible models and records its explanation.
+- Missing/unavailable models produce a clear fallback or actionable error.
+- Remote routing is blocked by default and cannot bypass the existing remote gate.
+- Tests cover inventory changes, load/unload failures, selection precedence, fallback, concurrent requests, and remote-permission invariants.
 
 ## 14. Resolved open questions (from v0.4 section 15)
 
