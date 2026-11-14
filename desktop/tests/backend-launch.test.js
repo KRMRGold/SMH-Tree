@@ -36,7 +36,7 @@ test("desktop starts a loopback backend and completes an authenticated fake-prov
     const headers = { Authorization: "Bearer " + connection.token };
     const health = await fetch(baseUrl + "/v1/health", { headers });
     assert.equal(health.status, 200);
-    assert.equal((await health.json()).version, "0.8.0");
+    assert.equal((await health.json()).version, "0.8.1");
 
     const projectResponse = await fetch(baseUrl + "/v1/projects", {
       method: "POST",
