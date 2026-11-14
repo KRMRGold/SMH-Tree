@@ -1,5 +1,5 @@
 # Distributed Cognitive Architecture
-**Design Document — v0.4**
+**Design Document — v0.5**
 
 ## 1. Vision
 
@@ -709,6 +709,55 @@ The following remain open:
 
 The first technical prototype should validate the Electron-to-Python process lifecycle, local API security, SQLite persistence, one local model request, and one optional remote model request. Knowledge-framework integration and packaging should be tested as separate risks before they become foundational dependencies.
 
+
+### 16.11 Local model lifecycle and request routing
+
+Model lifecycle management and request routing are separate responsibilities built on the provider-adapter layer.
+
+**Model Manager**
+
+- Detect whether the configured local runtime (initially Ollama) is reachable.
+- Discover installed models and separately report models currently loaded in runtime memory.
+- Offer explicit load and unload operations for installed models.
+- Expose provider-neutral status to the desktop UI while keeping runtime-specific lifecycle calls inside the Ollama adapter.
+- Initially connect to an existing Ollama service rather than launching, stopping, installing, or updating the Ollama server itself.
+- Do not download models automatically. Model acquisition remains a deliberate user action.
+- Report lifecycle errors and runtime-reported resource information where available. Do not promise that every model can remain loaded simultaneously.
+
+**Model Router**
+
+The router selects a provider/model for each new task; it does not generate the answer. Its inputs include:
+
+- Task category and required capabilities or modalities.
+- Explicit model profiles and configured context limits.
+- User-selected default, one-message override, or conversation-level pin.
+- Provider/model availability and current runtime state.
+- Local resource constraints and request concurrency.
+- Per-request remote permission.
+
+Start with deterministic rules and explicit user-editable profiles. Add optional model-based task classification only after the deterministic router is reliable. A classifier may recommend a task category or candidate model, but deterministic policy retains authority over permissions, model eligibility, fallback, and resource constraints.
+
+**Selection precedence**
+
+1. A valid one-message override.
+2. A valid conversation-level pinned model.
+3. Deterministic automatic selection using task requirements and eligible model profiles.
+4. The configured eligible default/fallback.
+5. A clear actionable error if no permitted model can handle the request.
+
+An unavailable or incompatible explicit choice should be surfaced rather than silently ignored. Any fallback behavior must be visible to the user.
+
+**Transparency and provenance**
+
+Every run should record the actual provider/model used, whether selection was manual, pinned, or automatic, and a concise selection reason. The UI should make the selected model visible and allow the user to override it. Changing models affects future requests only; it does not rewrite previous messages or context snapshots.
+
+**Remote and local boundaries**
+
+The existing remote-transmission gate remains authoritative. Automatic routing cannot grant remote permission, expose disallowed memory, or bypass the transmission audit. A local model is preferred when remote use is not explicitly allowed. If no eligible local model exists, explain the limitation instead of silently sending the request remotely.
+
+**Resource-aware lifecycle**
+
+Keep-warm and idle-unload policies are later refinements. Begin with explicit load/unload controls and runtime-reported status. Add automatic unloading or preloading only after testing memory pressure, model-switch latency, and concurrent requests. Never assume all installed models fit in memory.
 
 ## 17. Overall Direction
 
