@@ -152,6 +152,8 @@ async function loadMessages(branchId = state.selectedBranchId, selectionSequence
 
 async function selectConversation(conversationId) {
   const selectionSequence = ++state.selectionSequence;
+  state.contextRequestSequence += 1;
+  state.memoryRequestSequence += 1;
   state.selectedConversationId = conversationId;
   state.lastRunId = null;
   const conversation = state.conversations.find((item) => item.id === conversationId);
@@ -172,6 +174,8 @@ async function selectConversation(conversationId) {
 
 async function selectBranch(branchId) {
   const selectionSequence = ++state.selectionSequence;
+  state.contextRequestSequence += 1;
+  state.memoryRequestSequence += 1;
   state.selectedBranchId = branchId;
   state.lastRunId = null;
   await loadMessages(branchId, selectionSequence);
@@ -281,6 +285,7 @@ async function sendMessage(event) {
     return;
   }
 
+  const branchId = state.selectedBranchId;
   const allowRemote = state.selectedProviderRemote && elements.allowRemote.checked;
   elements.allowRemote.checked = false;
   elements.messageInput.value = "";
@@ -290,7 +295,7 @@ async function sendMessage(event) {
   elements.chatStatus.textContent = "Generating…";
 
   state.cancelStream = window.cog.stream(
-    `/v1/branches/${encodeURIComponent(state.selectedBranchId)}/chat`,
+    `/v1/branches/${encodeURIComponent(branchId)}/chat`,
     {
       method: "POST",
       providerId: state.selectedProviderId,
@@ -305,11 +310,14 @@ async function sendMessage(event) {
       if (eventName === "token") {
         assistantBody.textContent += data.token ?? "";
       } else if (eventName === "done") {
-        state.lastRunId = data.run_id ?? state.lastRunId;
+        if (state.selectedBranchId === branchId) state.lastRunId = data.run_id ?? state.lastRunId;
         elements.chatStatus.textContent = "Response complete.";
         state.cancelStream = null;
         elements.sendButton.disabled = false;
-        await loadMessages();
+        if (state.selectedBranchId === branchId) {
+          await loadMessages(branchId);
+          if (state.currentView === "context") await loadContext();
+        }
       } else if (eventName === "error") {
         const message = data?.message ?? data?.data?.error?.message ?? "The provider request failed.";
         elements.chatStatus.textContent = message;
@@ -598,6 +606,8 @@ async function initialize() {
 
 elements.projectSelect.addEventListener("change", async () => {
   state.selectionSequence += 1;
+  state.contextRequestSequence += 1;
+  state.memoryRequestSequence += 1;
   state.lastRunId = null;
   state.selectedProjectId = elements.projectSelect.value;
   state.selectedConversationId = null;
