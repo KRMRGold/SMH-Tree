@@ -809,6 +809,17 @@ def create_app(
     def get_transmissions(connection=Depends(open_database)) -> dict[str, object]:
         return {"items": transmission_repo.list_transmissions(connection)}
 
+    @app.get("/v1/branches/{branch_id}/runs/latest", dependencies=[Depends(require_token)])
+    def get_latest_branch_run(
+        branch_id: str, connection=Depends(open_database)
+    ) -> dict[str, object]:
+        branch = connection.execute(
+            "SELECT id FROM branches WHERE id = ?", (branch_id,)
+        ).fetchone()
+        if branch is None:
+            raise not_found("Branch not found.")
+        return {"run": run_repo.get_latest_chat_run_for_branch(connection, branch_id)}
+
     @app.get("/v1/runs/{run_id}", dependencies=[Depends(require_token)])
     def get_run(run_id: str, connection=Depends(open_database)) -> dict[str, object]:
         run = run_repo.get_run(connection, run_id)
