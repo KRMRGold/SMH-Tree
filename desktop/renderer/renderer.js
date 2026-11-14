@@ -636,6 +636,7 @@ elements.projectSelect.addEventListener("change", async () => {
   elements.chatPanel.hidden = true;
   elements.emptyState.hidden = false;
   await loadConversations();
+  if (state.currentView === "context") void loadContext().catch(showPanelError);
   if (state.currentView === "memory") void loadMemory().catch(showPanelError);
 });
 
