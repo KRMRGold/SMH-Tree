@@ -12,8 +12,8 @@
 - **Remote-sharing settings:** authenticated API endpoints persist global/user memory-sharing flags in the existing `settings` table. Both default off; strict boolean input is required.
 - **Repair candidate verification:** Backend CI and Desktop CI PASS for the candidate implementation/test state; user reports Windows `npm test` passes (16/16), and confirms Context restores saved context and newly added Memory items are visible. The exact local checkout SHA was not supplied. Backend tests on Windows and the remaining M8 manual checks are still outstanding. See `docs/TEST_RECORD.md`.
 - **Not yet accepted:** Windows backend regression run, full Electron runtime/UI acceptance, Windows `safeStorage`/DPAPI behavior, and supervised Windows child-process-tree cleanup remain unverified. M8 must not be marked accepted until required checks pass.
-- **Deferred post-M9 capabilities:** Epistemic authoring UI for manual claim/source creation, evidence attachment, assessments, claim relationships, and explicit message-to-claim extraction; plus Model Manager for Ollama service detection, installed/loaded model inventory, and explicit load/unload, and Model Router for transparent deterministic task-based selection, manual overrides, conversation pins, and later optional classifier assistance. Design is recorded in `Build-spec.md`; these capabilities are not implemented and do not expand M8/M9.
-- **Next:** complete the remaining Windows M8 checklist: run backend `uv run pytest`; verify panel/selection/filter/error behavior; exercise Claims search/detail/status/open-question workflows, settings, and credential storage; and confirm supervised backend shutdown. Claim/source/evidence/assessment/relationship authoring is deferred beyond M9. Packaging and installer work remain M9.
+- **Planned M9 (not implemented):** Epistemic Authoring UI for manual claim creation, source registration, evidence attachment, independent assessments, claim relationships, and explicit M7 message-to-claim extraction. The design and acceptance criteria are recorded in `Build-spec.md`; M9 begins only after M8 is accepted. **Deferred post-MVP (after M10):** Model Manager for Ollama service detection, installed/loaded model inventory, and explicit load/unload; and Model Router for transparent deterministic task-based selection, manual overrides, conversation pins, and later optional classifier assistance.
+- **Next:** complete the remaining Windows M8 checklist: run backend `uv run pytest`; verify panel/selection/filter/error behavior; exercise the existing Claims search/detail/status/open-question workflows, settings, and credential storage; and confirm supervised backend shutdown. After M8 is accepted, begin M9 Epistemic Authoring UI. Packaging and installer work move to M10.
 
 ## Current accepted state
 
@@ -169,9 +169,9 @@
 
 - The M2 provider registry uses environment-configured endpoints; persistent provider configuration via POST /v1/providers remains deferred.
 - M4 memory services, scope enforcement, FTS search, and lifecycle are accepted in backend 0.4.1. M5 context compiler and inspector are accepted in backend 0.5.0. M6 epistemic records and claim-aware context are accepted in backend 0.6.1. M7 checkpointed workflows and explicit claim extraction are accepted in backend 0.7.0.
-- No desktop shell or packaging yet (M8–M9).
+- Desktop shell is M8; packaging and clean-machine checks are M10.
 - M0's candidate tag was intentionally omitted with user acceptance.
-- Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M9 work.
+- Windows local tests now pass for the M1 suite; desktop packaging and clean-machine checks remain M10 work.
 
 ## Test inventory
 
