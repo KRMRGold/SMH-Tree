@@ -68,6 +68,18 @@ test("renderer exposes context, memory, claims, and settings views without HTML 
   assert.doesNotMatch(renderer, /\.innerHTML\b/);
 });
 
+test("context and memory panels reject stale requests and context follows the selected branch", async () => {
+  const renderer = await read("renderer/renderer.js");
+  const backendRuns = await read("../backend/src/cogplat/repos/runs.py");
+  assert.match(renderer, /contextRequestSequence/);
+  assert.match(renderer, /memoryRequestSequence/);
+  assert.match(renderer, /conversationsRequestSequence/);
+  assert.match(renderer, /runs\/latest/);
+  assert.match(renderer, /requestSequence !== state\.memoryRequestSequence/);
+  assert.match(renderer, /requestSequence !== state\.contextRequestSequence/);
+  assert.match(backendRuns, /get_latest_chat_run_for_branch/);
+});
+
 test("renderer uses an in-app dialog instead of unsupported window.prompt", async () => {
   const html = await read("renderer/index.html");
   const renderer = await read("renderer/renderer.js");
