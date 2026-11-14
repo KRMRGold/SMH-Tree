@@ -166,6 +166,7 @@ h1 { margin: 6px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em;
 .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; }
 .panel-heading h2 { margin:6px 0 0; font-size:20px; font-weight:600; }
 .panel-note, .muted { color:var(--muted); font-size:12px; line-height:1.6; }
+.panel-error { margin:0 0 14px; padding:10px 12px; border:1px solid #70434b; border-radius:8px; color:#e6b5bb; background:#2a1b22; font-size:11px; line-height:1.5; }
 .panel-filters { display:flex; flex-wrap:wrap; gap:12px; margin:18px 0; }
 .panel-filters label { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:10px; }
 .panel-filters select, .panel-filters input { min-width:160px; padding:8px 10px; font-size:11px; }
