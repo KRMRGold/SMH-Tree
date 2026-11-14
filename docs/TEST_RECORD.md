@@ -1,3 +1,10 @@
+## M8 user-reported verification update
+
+- **Desktop automated tests:** PASS — user reports `npm test` completed with 16 passed, 0 failed after updating the backend launch test's expected backend version from 0.8.0 to 0.8.1. The exact local checkout SHA was not supplied.
+- **Windows UI checks:** PASS — user confirms the Context panel shows the saved context and newly added Memory items are present. The report does not establish all selection-switching, restart, filtering, error, claims, settings, credential, or process-shutdown checks.
+- **Backend automated tests:** NOT REPORTED in this update.
+- **Overall M8 status:** NOT ACCEPTED. This is useful partial verification, not completion of the full M8 acceptance checklist.
+
 ## M8 panel synchronization repair candidate — not yet verified
 
 - **Candidate backend version:** 0.8.1.
