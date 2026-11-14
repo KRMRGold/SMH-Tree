@@ -1,6 +1,6 @@
 # Cognitive Platform: Build Specification (Desktop MVP)
 
-**Spec version:** 0.5.0. This is a living document: update it in place and let Git history keep prior revisions.
+**Spec version:** 0.6.0. This is a living document: update it in place and let Git history keep prior revisions.
 
 Derived from "Distributed Cognitive Architecture v0.4". The vision document says what the system should become. This document says exactly what to build first, and in what order. Where the two disagree, this document wins for the MVP.
 
@@ -56,13 +56,13 @@ This section records adoption per the workflow's own setup rules. The reusable w
 
 **Justified adaptations**
 
-1. **Milestones are workflow passes.** Each of M0 to M9 is one pass through S3 to S10. The acceptance tests listed under a milestone are its S3 acceptance criteria, so the builder starts at S4. Bug fixes inside a milestone use the lightweight path.
-2. **Versioning (SemVer, independent sequences).** The backend package (`pyproject.toml`), the desktop app (`package.json`), the HTTP API (`/v1` in the path; a breaking change means `/v2`), and the database schema (migration number) are versioned separately. Both code artifacts stay `0.x.y` until M9 is accepted, then become `1.0.0`. A milestone candidate bumps MINOR; a repair bumps PATCH. Example: M1 produces `backend-v0.1.0`; if testing fails, the repair is `backend-v0.1.1`.
+1. **Milestones are workflow passes.** Each of M0 to M10 is one pass through S3 to S10. The acceptance tests listed under a milestone are its S3 acceptance criteria, so the builder starts at S4. Bug fixes inside a milestone use the lightweight path.
+2. **Versioning (SemVer, independent sequences).** The backend package (`pyproject.toml`), the desktop app (`package.json`), the HTTP API (`/v1` in the path; a breaking change means `/v2`), and the database schema (migration number) are versioned separately. Both code artifacts stay `0.x.y` until M10 is accepted, then become `1.0.0`. A milestone candidate bumps MINOR; a repair bumps PATCH. Example: M1 produces `backend-v0.1.0`; if testing fails, the repair is `backend-v0.1.1`.
 3. **Candidate, failed, accepted.** Tag every candidate in Git (`backend-v0.1.0`, `desktop-v0.8.0`). Never move or reuse a tag. A failed candidate keeps its tag and its evidence; the repair gets a new tag. Acceptance status (candidate, failed, accepted, superseded) is recorded in `docs/MAINTENANCE.md`, never implied by a version number.
 4. **Living documents.** `BUILD_SPEC.md`, `docs/MAINTENANCE.md`, `docs/TEST_RECORD.md`, `docs/decisions.md` and `docs/MILESTONE.md` each exist as exactly one file, updated in place. Git history is the archive. No `-v2`, `-old` or backup copies.
-5. **Verification evidence.** The builder runs every check its environment permits and records PASS, FAIL, BLOCKED or NOT RUN per check in `docs/TEST_RECORD.md`, with the exact commit, commands and results. Checks that need Windows, a real Ollama model, or a remote API key are BLOCKED or NOT RUN if unavailable, with the minimum human action stated. A critical check that is BLOCKED prevents accepting that milestone unless the user explicitly accepts the documented limitation. M9's clean-Windows-machine checks are the main expected human-run checks.
+5. **Verification evidence.** The builder runs every check its environment permits and records PASS, FAIL, BLOCKED or NOT RUN per check in `docs/TEST_RECORD.md`, with the exact commit, commands and results. Checks that need Windows, a real Ollama model, or a remote API key are BLOCKED or NOT RUN if unavailable, with the minimum human action stated. A critical check that is BLOCKED prevents accepting that milestone unless the user explicitly accepts the documented limitation. M10's clean-Windows-machine checks are the main expected human-run checks.
 6. **Maintenance document contents.** After a milestone passes its gate, update `docs/MAINTENANCE.md` with the accepted version and commit, implemented behavior, tests run and their results, known limitations, failed candidates and outcomes, deferred work, and the adopted workflow version.
-7. **Milestone document (S11).** When the user declares the MVP complete (after M9), reconcile `BUILD_SPEC.md`, `docs/MAINTENANCE.md` and the accepted code into `docs/MILESTONE.md`, then test whether a fresh LLM session can reconstruct the app from it.
+7. **Milestone document (S11).** When the user declares the MVP complete (after M10), reconcile `BUILD_SPEC.md`, `docs/MAINTENANCE.md` and the accepted code into `docs/MILESTONE.md`, then test whether a fresh LLM session can reconstruct the app from it.
 
 ---
 
@@ -70,7 +70,7 @@ This section records adoption per the workflow's own setup rules. The reusable w
 
 | Area | Decision |
 |---|---|
-| Desktop shell | Electron, Windows-first. Electron Forge for packaging (M9 only). |
+| Desktop shell | Electron, Windows-first. Electron Forge for packaging (M10 only). |
 | Frontend | Plain HTML/CSS/JS, native ES modules. No framework. Vite optional for dev. |
 | Backend | Python 3.12, single process, FastAPI + Pydantic v2, `uv` for env management. |
 | Canonical store | SQLite (WAL mode), FTS5 for search. Stdlib `sqlite3` with a thin repository layer. No ORM. |
@@ -83,7 +83,7 @@ This section records adoption per the workflow's own setup rules. The reusable w
 | Models | `ModelProvider` adapter interface. Ollama (local) and one OpenAI-compatible HTTP provider (remote) in the MVP. |
 | API | HTTP + JSON under `/v1`, SSE for streaming. WebSockets are not used. |
 | Security | Loopback bind, per-launch bearer token, Electron context isolation + sandbox, no Node in renderer. |
-| Tests | pytest (backend), Node built-in test runner (frontend units), Playwright (E2E, M9). |
+| Tests | pytest (backend), Node built-in test runner (frontend units), Playwright (E2E, M10). |
 | Token counting | Pluggable `TokenCounter`. Default is a conservative `ceil(len(text)/3.5)` estimate. Provider-specific counters can be added later. |
 
 ---
@@ -654,32 +654,19 @@ Each milestone lists what to build and the tests that must pass.
 **M8: Desktop shell.** Electron main, preload and renderer screens from section 11, with backend supervision.
 - Tests (Node runner + manual script): the backend starts, the port is loopback-only, calls without the token fail, the renderer cannot reach `require`/`process`, quitting leaves no orphan Python process, and a chat round trip with a fake provider works end to end.
 
-**M9: Packaging and E2E.** PyInstaller sidecar, Electron Forge Windows installer, Playwright smoke tests. First check that the sidecar runs on a clean Windows machine **without Python installed**.
-- Tests: the installer builds; the installed app launches offline; chat works with a local Ollama model; user data lives in `%APPDATA%`, not the install directory.
+**M9: Epistemic authoring UI.** Add deliberate desktop workflows for manual claim creation, source registration, evidence attachment, independent assessments, claim relationships, and explicit M7 message-to-claim extraction. Preserve existing scope, provenance, validation, remote opt-in, and append-only history invariants. The detailed workflows and acceptance criteria are specified below in the M9 feature design.
+- Tests: manual claims persist in the selected project/global scope with user origin and initial `reported` status; source registration and evidence attachment preserve source IDs, stance, excerpt, locator, and scope validation; assessments remain independent and append-only with invalid values rejected; relationships enforce target visibility and require a contradiction basis for `contradicts`; explicit extraction preserves exact evidence and provenance and cannot bypass remote opt-in; records survive restart and appear in claim detail/search; M6/M7 API and persistence invariants remain green.
 
----
+**M10: Packaging and E2E.** PyInstaller sidecar, Electron Forge Windows installer, and Playwright smoke tests. First verify that the sidecar runs on a clean Windows machine **without Python installed**.
+- Tests: the installer builds; the installed app launches offline; chat works with a local Ollama model; user data lives in `%APPDATA%`, not the install directory; packaged app startup/shutdown, persistence, and core desktop workflows pass Playwright smoke coverage.
 
-## 13. Non-goals (do NOT build in the MVP)
+### M9 feature design: epistemic authoring UI
 
-- Full desktop epistemic authoring: manually creating claims or sources, attaching evidence, adding assessments, and creating claim relationships. The backend contracts remain available; the desktop authoring workflows are deferred to the post-MVP extension below.
-- Graphiti, Cognee, Neo4j or any graph database (extension point: `KnowledgeIndex`, section 9).
-- The multi-agent "cognitive network" (Memory Curator, Research, Verification, Argumentation agents). The data model supports them; the agents come after M9.
-- Argument graphs and automated evaluation of arguments.
-- Autonomous background memory curation (MVP memory is user-driven plus explicit extraction).
-- Cloud sync, accounts, multi-user, or any network exposure of the API.
-- Integrations with Chatapp, C-2 Branching Messenger or Meta-Modules (they will consume the same `/v1` API later).
-- Embeddings and vector search (FTS5 only in the MVP; the provider interface already has `embed` for later).
-- Auto-update, telemetry, code signing.
-
----
-
-### Post-MVP extension: epistemic authoring UI
-
-This capability is intentionally outside M0–M9. It must not delay or alter the current M8/M9 acceptance gates. The M8 Claims panel remains an inspection and limited-management surface, not a complete epistemic editor.
+This is the M9 desktop authoring scope. It follows M8 acceptance; it does not expand M8 or permit M9 implementation to begin before M8 is accepted. The M8 Claims panel remains an inspection and limited-management surface.
 
 **Goal:** let users deliberately create and maintain the epistemic records that the backend already supports, without weakening provenance or append-only history.
 
-**Planned desktop workflows:**
+**Desktop workflows:**
 
 1. **Create claims manually.** Provide a form for claim text and claim type, with optional structured subject/predicate/object and validity dates. Use the selected project scope (or global scope when no project is selected). User-originated claims use the existing backend default origin and initial `reported` status. Do not silently create claims from ordinary chat.
 2. **Explicit message extraction.** Expose the existing M7 extraction endpoint as a deliberate action on one selected message. Show the provider/model choice and preserve the existing per-request remote opt-in. Extracted claims remain `proposed`, cite exact source-message excerpts, and retain their source/evidence and provenance links. No background extraction.
@@ -688,7 +675,7 @@ This capability is intentionally outside M0–M9. It must not delay or alter the
 5. **Create claim relationships.** Allow users to select another visible claim and create supported relation types. A `contradicts` relation requires an explicit contradiction basis. Display both claims without mutating either claim's content or status.
 6. **Review and correct history.** Claims, sources, evidence, assessments, and relations remain append-only. Do not offer edit/delete controls that imply rewriting history. Corrections are represented by additional records or status events, with provenance retained.
 
-**Acceptance criteria for this future feature:**
+**Acceptance criteria:**
 
 - Manual claim creation persists in the selected project/global scope with the expected initial status and origin.
 - Source registration and evidence attachment preserve source IDs, stance, excerpt, locator, and scope validation.
@@ -698,9 +685,24 @@ This capability is intentionally outside M0–M9. It must not delay or alter the
 - All created records remain visible after app restart and are correctly reflected in claim detail and search.
 - Existing M6/M7 API and persistence invariants continue to pass.
 
+---
+
+## 13. Non-goals (do NOT build in the MVP)
+
+- Graphiti, Cognee, Neo4j or any graph database (extension point: `KnowledgeIndex`, section 9).
+- The multi-agent "cognitive network" (Memory Curator, Research, Verification, Argumentation agents). The data model supports them; the agents come after M10.
+- Argument graphs and automated evaluation of arguments.
+- Autonomous background memory curation (MVP memory is user-driven plus explicit extraction).
+- Cloud sync, accounts, multi-user, or any network exposure of the API.
+- Integrations with Chatapp, C-2 Branching Messenger or Meta-Modules (they will consume the same `/v1` API later).
+- Embeddings and vector search (FTS5 only in the MVP; the provider interface already has `embed` for later).
+- Auto-update, telemetry, code signing.
+
+---
+
 ### Post-MVP extension: local model lifecycle and routing
 
-This capability is intentionally outside M0–M9. It must not delay or alter the current M8/M9 acceptance gates.
+This capability is post-MVP, outside M0–M10. It must not delay or alter the M8, M9, or M10 acceptance gates.
 
 **Goal:** make local models easy to discover, load, unload, and select, then allow SMH-Tree to route individual tasks to suitable models without coupling conversations to one provider or model.
 
@@ -745,7 +747,7 @@ This capability is intentionally outside M0–M9. It must not delay or alter the
 | Question | MVP answer |
 |---|---|
 | Which graph DB? | None. SQLite plus the `links` table; revisit only if a concrete query is too slow or awkward. |
-| Cognee vs Graphiti overlap? | Neither adopted. Evaluate behind `KnowledgeIndex` after M9; must not duplicate ownership. |
+| Cognee vs Graphiti overlap? | Neither adopted. Evaluate behind `KnowledgeIndex` after M10; must not duplicate ownership. |
 | Shared storage? | One SQLite file owned by the backend. External frameworks keep their own stores. |
 | Sync model? | One-way: SQLite (canonical) to external index, via `KnowledgeIndex.index()`. No bidirectional sync. |
 | Canonical contract? | Section 5 plus section 4 schemas, versioned by `schema_version` and migration numbers. |
@@ -760,7 +762,7 @@ This capability is intentionally outside M0–M9. It must not delay or alter the
 
 ## 15. Definition of done for the whole MVP
 
-- All M0 to M9 acceptance tests pass.
+- All M0 to M10 acceptance tests pass.
 - `README.md` documents setup (`uv sync`, `npm install`, run commands) and how to run all tests.
 - A new developer can clone, run the backend tests with no network, and start the desktop app in dev mode following only the README.
 - `docs/MAINTENANCE.md` lists the accepted versions, what was built, what was deferred, and any decision made that deviated from this spec; `docs/TEST_RECORD.md` holds the latest PASS, FAIL, BLOCKED and NOT RUN results.
