@@ -389,7 +389,13 @@ async function loadContext() {
     return;
   }
   addText(target, "p", "muted", "Loading the latest saved context packet…");
-  const latest = await api(`/v1/branches/${encodeURIComponent(branchId)}/runs/latest`);
+  let latest;
+  try {
+    latest = await api(`/v1/branches/${encodeURIComponent(branchId)}/runs/latest`);
+  } catch (error) {
+    if (requestSequence !== state.contextRequestSequence || state.currentView !== "context" || branchId !== state.selectedBranchId) return;
+    throw error;
+  }
   if (requestSequence !== state.contextRequestSequence || state.currentView !== "context" || branchId !== state.selectedBranchId) return;
   const runId = latest.run?.id ?? null;
   state.lastRunId = runId;
@@ -399,10 +405,17 @@ async function loadContext() {
     return;
   }
   addText(target, "p", "muted", "Loading the saved packet…");
-  const [snapshot, run] = await Promise.all([
-    api(`/v1/runs/${encodeURIComponent(runId)}/context`),
-    api(`/v1/runs/${encodeURIComponent(runId)}`),
-  ]);
+  let snapshot;
+  let run;
+  try {
+    [snapshot, run] = await Promise.all([
+      api(`/v1/runs/${encodeURIComponent(runId)}/context`),
+      api(`/v1/runs/${encodeURIComponent(runId)}`),
+    ]);
+  } catch (error) {
+    if (requestSequence !== state.contextRequestSequence || state.currentView !== "context" || branchId !== state.selectedBranchId || runId !== state.lastRunId) return;
+    throw error;
+  }
   if (requestSequence !== state.contextRequestSequence || state.currentView !== "context" || branchId !== state.selectedBranchId || runId !== state.lastRunId) return;
   target.replaceChildren();
   recordCard(target, "Run", `${run.status ?? "unknown"} · ${run.id}`, `Provider: ${snapshot.provider_label} · Estimated tokens: ${snapshot.token_estimate}`);
@@ -425,7 +438,13 @@ async function loadMemory() {
   if (state.selectedProjectId) params.set("project_id", state.selectedProjectId);
   if (state.selectedConversationId) params.set("conversation_id", state.selectedConversationId);
   if (state.selectedBranchId) params.set("branch_id", state.selectedBranchId);
-  const result = await api(`/v1/memory?${params}`);
+  let result;
+  try {
+    result = await api(`/v1/memory?${params}`);
+  } catch (error) {
+    if (requestSequence !== state.memoryRequestSequence || state.currentView !== "memory") return;
+    throw error;
+  }
   if (requestSequence !== state.memoryRequestSequence || state.currentView !== "memory") return;
   target.replaceChildren();
   for (const item of result.items ?? []) {
