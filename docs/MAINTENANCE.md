@@ -4,7 +4,7 @@
 
 - **Current repair candidate desktop version:** 0.8.3.
 - **Current repair candidate backend version:** 0.8.1.
-- **Repair candidate implementation commit:** `e74a8f2cda43718ba91f2dd3a64abff474314400` (later commits in this sequence update documentation only).
+- **Repair candidate implementation commit:** `e74a8f2cda43718ba91f2dd3a64abff474314400` (the later application change is a desktop test expectation correction; subsequent commits update documentation).
 - **CI verification:** Backend CI [#43558222708](https://github.com/KRMRGold/SMH-Tree/actions/runs/43558222708) passed on the exact implementation commit. Desktop CI [#43559522143](https://github.com/KRMRGold/SMH-Tree/actions/runs/43559522143) passed on `f6a62352b20e3413ad7453f9e8dc29f0719b5e09`; the only non-documentation change from the implementation commit is the corrected backend-version expectation in a desktop test. Both candidate tags exist and point to the implementation commit.
 - **Implemented:** Electron main/preload/renderer foundation; backend process supervision; context inspector for the exact stored context snapshot; scoped memory list/filter/create/lifecycle controls; claims with status, evidence, assessments, relationship display, contradiction comparison, and open-question management; settings for remote memory sharing and provider credentials.
 - **M8 panel synchronization repair:** latest context is now retrieved by selected branch from its newest persisted chat-run snapshot; selection/request sequence guards prevent stale conversation, context, or memory responses from overwriting current panel state; panel errors render in the relevant panel; memory scope visibility is explained; completed chat turns refresh an open Context panel.
