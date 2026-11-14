@@ -1,4 +1,58 @@
-## M8 desktop candidate — not yet accepted
+## M8 panel synchronization repair candidate — not yet verified
+
+- **Candidate backend version:** 0.8.1.
+- **Candidate desktop version:** 0.8.3.
+- **Implementation commit:** `e74a8f2cda43718ba91f2dd3a64abff474314400`.
+- **Changes:** added an authenticated branch-scoped latest-snapshotted-chat-run endpoint; added repository ordering by `created_at` and SQLite insertion order; added API coverage for authentication, missing branches, empty history, and newest snapshot selection; added renderer request sequencing for conversation, message, Context, and Memory loads; invalidated stale panel requests immediately on workspace/conversation/branch changes; tied Context to the selected branch and restored its latest saved snapshot; added loading feedback, panel-local errors, memory-scope explanation, and Context refresh after chat completion.
+- **Source inspection:** relevant backend route/repository, renderer flows, and regression tests were retrieved and inspected. This is not runtime test evidence.
+- **Backend automated tests:** NOT RUN by the assistant. The available GitHub status query returned no check records for this candidate; CI result is therefore NOT VERIFIED.
+- **Desktop automated tests and syntax checks:** NOT RUN by the assistant. The available GitHub status query returned no check records for this candidate; CI result is therefore NOT VERIFIED.
+- **Windows runtime/manual checks:** NOT RUN. The minimum required local action is to pull this candidate, run the backend and desktop checks below, then launch the app and exercise Context/Memory while switching conversations and branches.
+- **Candidate tags:** `backend-v0.8.1` and `desktop-v0.8.3` have NOT been created through the available GitHub integration. The candidate code commit to tag is the implementation commit above.
+- **Acceptance status:** NOT ACCEPTED. The previous 0.8.0 candidate's passing CI does not apply to this repair candidate.
+
+### Repair candidate verification commands
+
+Run from Git Bash in the Windows checkout:
+
+```bash
+git switch main
+git pull --ff-only origin main
+
+cd backend
+uv sync --dev
+uv run pytest
+
+cd ../desktop
+npm install
+node --check main/main.js
+node --check main/backend-supervisor.js
+node --check main/sse-parser.js
+node --check preload/preload.js
+node --check renderer/renderer.js
+npm test
+npm start
+```
+
+In the app, verify:
+1. Open Context on a branch with prior chat history; confirm it loads that branch's latest saved packet, including after switching away and back.
+2. Switch rapidly between conversations and branches while Context and Memory are loading; confirm older results never replace the current selection.
+3. Switch workspace while either panel is open; confirm the panel updates to the new selection instead of retaining old results.
+4. Add a memory item in a known scope, change conversations/branches, and confirm it appears only in scopes where it is visible. Confirm the panel explains empty filtered results.
+5. Complete a chat turn while Context is open; confirm the inspector refreshes to that run.
+6. Confirm request errors appear inside the relevant panel, not hidden in the Chat status area.
+
+After automated tests pass, create and push the candidate tags from Git Bash:
+
+```bash
+git tag backend-v0.8.1 e74a8f2cda43718ba91f2dd3a64abff474314400
+git tag desktop-v0.8.3 e74a8f2cda43718ba91f2dd3a64abff474314400
+git push origin backend-v0.8.1 desktop-v0.8.3
+```
+
+---
+
+## M8 baseline candidate 0.8.0 — not yet accepted
 
 - **Candidate desktop version:** 0.8.0.
 - **Candidate backend version:** 0.8.0.
