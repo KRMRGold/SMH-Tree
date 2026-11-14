@@ -33,6 +33,10 @@ const state = {
   cancelStream: null,
   lastRunId: null,
   currentView: "chat",
+  selectionSequence: 0,
+  conversationsRequestSequence: 0,
+  contextRequestSequence: 0,
+  memoryRequestSequence: 0,
   claims: [],
 };
 
@@ -91,10 +95,11 @@ async function loadProjects() {
 }
 
 async function loadConversations() {
-  const query = state.selectedProjectId
-    ? `?project_id=${encodeURIComponent(state.selectedProjectId)}`
-    : "";
+  const requestSequence = ++state.conversationsRequestSequence;
+  const projectId = state.selectedProjectId;
+  const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
   const result = await api(`/v1/conversations${query}`);
+  if (requestSequence !== state.conversationsRequestSequence || projectId !== state.selectedProjectId) return;
   state.conversations = result.items ?? [];
   renderConversations();
 }
@@ -131,12 +136,13 @@ function renderConversations() {
 
 async function loadBranches(conversationId) {
   const result = await api(`/v1/conversations/${encodeURIComponent(conversationId)}/branches`);
-  state.branches = result.items ?? [];
+  return result.items ?? [];
 }
 
-async function loadMessages() {
-  if (!state.selectedBranchId) return;
-  const result = await api(`/v1/branches/${encodeURIComponent(state.selectedBranchId)}/messages`);
+async function loadMessages(branchId = state.selectedBranchId, selectionSequence = state.selectionSequence) {
+  if (!branchId) return;
+  const result = await api(`/v1/branches/${encodeURIComponent(branchId)}/messages`);
+  if (selectionSequence !== state.selectionSequence || branchId !== state.selectedBranchId) return;
   elements.messageList.replaceChildren();
   for (const message of result.items ?? []) {
     appendMessage(message.role, message.content, message.participant);
@@ -145,24 +151,34 @@ async function loadMessages() {
 }
 
 async function selectConversation(conversationId) {
+  const selectionSequence = ++state.selectionSequence;
   state.selectedConversationId = conversationId;
+  state.lastRunId = null;
   const conversation = state.conversations.find((item) => item.id === conversationId);
   state.selectedBranchId = conversation?.root_branch_id ?? null;
-  await loadBranches(conversationId);
-  if (state.branches.length && !state.branches.some((branch) => branch.id === state.selectedBranchId)) {
-    state.selectedBranchId = state.branches[0].id;
+  const branches = await loadBranches(conversationId);
+  if (selectionSequence !== state.selectionSequence) return;
+  state.branches = branches;
+  if (branches.length && !branches.some((branch) => branch.id === state.selectedBranchId)) {
+    state.selectedBranchId = branches[0].id;
   }
   elements.activeTitle.textContent = conversation?.title ?? "Conversation";
   elements.emptyState.hidden = true;
   switchView("chat");
-  await loadMessages();
+  await loadMessages(state.selectedBranchId, selectionSequence);
+  if (selectionSequence !== state.selectionSequence) return;
   renderConversations();
 }
 
 async function selectBranch(branchId) {
+  const selectionSequence = ++state.selectionSequence;
   state.selectedBranchId = branchId;
-  await loadMessages();
+  state.lastRunId = null;
+  await loadMessages(branchId, selectionSequence);
+  if (selectionSequence !== state.selectionSequence) return;
   renderConversations();
+  if (state.currentView === "context") void loadContext().catch(showPanelError);
+  if (state.currentView === "memory") void loadMemory().catch(showPanelError);
 }
 
 async function loadProviders() {
@@ -314,6 +330,8 @@ const views = {
 };
 function switchView(name) {
   if (!views[name]) return;
+  if (state.currentView === "context" && name !== "context") state.contextRequestSequence += 1;
+  if (state.currentView === "memory" && name !== "memory") state.memoryRequestSequence += 1;
   state.currentView = name;
   document.querySelectorAll(".view-tab").forEach((button) => {
     button.setAttribute("aria-current", String(button.dataset.view === name));
@@ -325,7 +343,17 @@ function switchView(name) {
   if (name === "settings") void loadSettings().catch(showPanelError);
 }
 function showPanelError(error) {
-  elements.chatStatus.textContent = error?.message ?? String(error);
+  const message = error?.message ?? String(error);
+  const panel = views[state.currentView];
+  if (!panel || state.currentView === "chat") {
+    elements.chatStatus.textContent = message;
+    return;
+  }
+  panel.querySelectorAll(".panel-error").forEach((node) => node.remove());
+  const notice = document.createElement("p");
+  notice.className = "panel-error";
+  notice.textContent = message;
+  panel.prepend(notice);
 }
 function addText(parent, tag, className, value) {
   const node = document.createElement(tag);
@@ -344,16 +372,31 @@ function recordCard(parent, title, subtitle, body) {
   return card;
 }
 async function loadContext() {
+  const requestSequence = ++state.contextRequestSequence;
+  const branchId = state.selectedBranchId;
   const target = $("#context-content");
   target.replaceChildren();
-  if (!state.lastRunId) {
-    addText(target, "p", "muted", "No run in this session yet. Send a message first.");
+  if (!branchId) {
+    addText(target, "p", "muted", "Choose a conversation to inspect its latest context packet.");
     return;
   }
+  addText(target, "p", "muted", "Loading the latest saved context packet…");
+  const latest = await api(`/v1/branches/${encodeURIComponent(branchId)}/runs/latest`);
+  if (requestSequence !== state.contextRequestSequence || state.currentView !== "context" || branchId !== state.selectedBranchId) return;
+  const runId = latest.run?.id ?? null;
+  state.lastRunId = runId;
+  target.replaceChildren();
+  if (!runId) {
+    addText(target, "p", "muted", "No saved context packet exists for this branch yet. Send a message first.");
+    return;
+  }
+  addText(target, "p", "muted", "Loading the saved packet…");
   const [snapshot, run] = await Promise.all([
-    api(`/v1/runs/${encodeURIComponent(state.lastRunId)}/context`),
-    api(`/v1/runs/${encodeURIComponent(state.lastRunId)}`),
+    api(`/v1/runs/${encodeURIComponent(runId)}/context`),
+    api(`/v1/runs/${encodeURIComponent(runId)}`),
   ]);
+  if (requestSequence !== state.contextRequestSequence || state.currentView !== "context" || branchId !== state.selectedBranchId || runId !== state.lastRunId) return;
+  target.replaceChildren();
   recordCard(target, "Run", `${run.status ?? "unknown"} · ${run.id}`, `Provider: ${snapshot.provider_label} · Estimated tokens: ${snapshot.token_estimate}`);
   const packet = snapshot.packet ?? {};
   const messages = Array.isArray(packet.messages) ? packet.messages : [];
@@ -365,14 +408,18 @@ async function loadContext() {
   if (Array.isArray(dropped) && dropped.length) recordCard(target, "Dropped context", `${dropped.length} omitted items`, JSON.stringify(dropped, null, 2));
 }
 async function loadMemory() {
+  const requestSequence = ++state.memoryRequestSequence;
   const target = $("#memory-content");
   target.replaceChildren();
+  addText(target, "p", "muted", "Loading visible memory…");
   const params = new URLSearchParams({state: $("#memory-state").value, limit: "100"});
   if ($("#memory-scope").value) params.set("scope", $("#memory-scope").value);
   if (state.selectedProjectId) params.set("project_id", state.selectedProjectId);
   if (state.selectedConversationId) params.set("conversation_id", state.selectedConversationId);
   if (state.selectedBranchId) params.set("branch_id", state.selectedBranchId);
   const result = await api(`/v1/memory?${params}`);
+  if (requestSequence !== state.memoryRequestSequence || state.currentView !== "memory") return;
+  target.replaceChildren();
   for (const item of result.items ?? []) {
     const card = recordCard(target, item.content, `${item.kind} · ${item.scope}${item.scope_id ? " · " + item.scope_id : ""} · importance ${item.importance} · ${item.state}`, `Origin: ${item.origin_kind}${item.origin_ref ? " · " + item.origin_ref : ""}`);
     if (item.state === "active") {
@@ -385,7 +432,7 @@ async function loadMemory() {
       card.append(outdated);
     }
   }
-  if (!(result.items ?? []).length) addText(target, "p", "muted", "No memory records match this filter.");
+  if (!(result.items ?? []).length) addText(target, "p", "muted", "No active memory matches these filters. Try All states or broaden the selected scope.");
 }
 async function createMemory() {
   const content = await requestText("Memory content");
@@ -550,6 +597,8 @@ async function initialize() {
 }
 
 elements.projectSelect.addEventListener("change", async () => {
+  state.selectionSequence += 1;
+  state.lastRunId = null;
   state.selectedProjectId = elements.projectSelect.value;
   state.selectedConversationId = null;
   state.selectedBranchId = null;
@@ -558,6 +607,7 @@ elements.projectSelect.addEventListener("change", async () => {
   elements.chatPanel.hidden = true;
   elements.emptyState.hidden = false;
   await loadConversations();
+  if (state.currentView === "memory") void loadMemory().catch(showPanelError);
 });
 
 elements.newProject.addEventListener("click", () => void createProject().catch((error) => {
