@@ -12,11 +12,12 @@
 - **Implementation commit:** `e74a8f2cda43718ba91f2dd3a64abff474314400`.
 - **Changes:** added an authenticated branch-scoped latest-snapshotted-chat-run endpoint; added repository ordering by `created_at` and SQLite insertion order; added API coverage for authentication, missing branches, empty history, and newest snapshot selection; added renderer request sequencing for conversation, message, Context, and Memory loads; invalidated stale panel requests immediately on workspace/conversation/branch changes; tied Context to the selected branch and restored its latest saved snapshot; added loading feedback, panel-local errors, memory-scope explanation, and Context refresh after chat completion.
 - **Source inspection:** relevant backend route/repository, renderer flows, and regression tests were retrieved and inspected. This is not runtime test evidence.
-- **Backend automated tests:** NOT RUN by the assistant. The available GitHub status query returned no check records for this candidate; CI result is therefore NOT VERIFIED.
-- **Desktop automated tests and syntax checks:** NOT RUN by the assistant. The available GitHub status query returned no check records for this candidate; CI result is therefore NOT VERIFIED.
-- **Windows runtime/manual checks:** NOT RUN. The minimum required local action is to pull this candidate, run the backend and desktop checks below, then launch the app and exercise Context/Memory while switching conversations and branches.
-- **Candidate tags:** `backend-v0.8.1` and `desktop-v0.8.3` have NOT been created through the available GitHub integration. The candidate code commit to tag is the implementation commit above.
-- **Acceptance status:** NOT ACCEPTED. The previous 0.8.0 candidate's passing CI does not apply to this repair candidate.
+- **Backend CI:** PASS — [Backend CI #43558222708](https://github.com/KRMRGold/SMH-Tree/actions/runs/43558222708), successful `Backend tests (Python 3.12)` job on the exact implementation commit `e74a8f2cda43718ba91f2dd3a64abff474314400`.
+- **Desktop CI:** PASS — [Desktop CI #43559522143](https://github.com/KRMRGold/SMH-Tree/actions/runs/43559522143), successful syntax-check and desktop-test job on `f6a62352b20e3413ad7453f9e8dc29f0719b5e09`. GitHub comparison from the implementation commit to this CI commit confirms the only non-documentation change is the backend-version expectation in `desktop/tests/backend-launch.test.js`; application implementation is unchanged.
+- **Windows automated tests:** Desktop `npm test` PASS — user-reported 16 passed, 0 failed. Backend `uv run pytest` on Windows remains NOT REPORTED.
+- **Windows runtime/manual checks:** PARTIAL — user confirms Context restores saved context and Memory shows newly added items. Selection-switching, workspace switching, filters/scope visibility, chat refresh, panel errors, claims, settings, credential storage, and supervised process shutdown remain NOT REPORTED.
+- **Candidate tags:** PASS — `backend-v0.8.1` and `desktop-v0.8.3` both exist as Git refs and point directly to implementation commit `e74a8f2cda43718ba91f2dd3a64abff474314400`. The refs are lightweight tags.
+- **Acceptance status:** NOT ACCEPTED. CI and partial user-reported Windows verification pass, but the remaining required Windows checks are outstanding.
 
 ### Repair candidate verification commands
 
