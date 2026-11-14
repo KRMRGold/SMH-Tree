@@ -76,6 +76,8 @@ This is the project's living decision log. Add concise entries when an implement
 
 
 
+- **M8 Claims UI boundary and deferred authoring:** The M8 desktop Claims panel is an inspection and limited-management surface: search/select claims, inspect status/evidence/assessments/relationships, compare contradictions, append status events, and create/update open questions. Manual claim/source creation, evidence attachment, assessment creation, relationship authoring, and a UI for explicit M7 message extraction are deferred beyond M9. This is a deliberate scope boundary, not a missing M8 acceptance item. The future UI must preserve M6/M7 scope, provenance, remote opt-in, validation, and append-only history.
+
 ## M7 decisions
 
 - **Workflow scope:** M7 adds exactly two LangGraph workflows: `chat_turn` and explicitly triggered `extract_claims`. LangGraph is an orchestration/checkpoint layer only; it does not introduce agents or a new canonical data store.
