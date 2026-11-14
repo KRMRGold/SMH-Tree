@@ -42,7 +42,7 @@ In the app, verify:
 5. Complete a chat turn while Context is open; confirm the inspector refreshes to that run.
 6. Confirm request errors appear inside the relevant panel, not hidden in the Chat status area.
 
-After automated tests pass, create and push the candidate tags from Git Bash:
+Create and push the candidate tags from Git Bash before testing; failed candidates retain their tags and evidence:
 
 ```bash
 git tag backend-v0.8.1 e74a8f2cda43718ba91f2dd3a64abff474314400
