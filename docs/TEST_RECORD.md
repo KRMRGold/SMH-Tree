@@ -1,7 +1,8 @@
 ## M8 user-reported verification update
 
 - **Desktop automated tests:** PASS — user reports Windows `npm test` completed with 16 passed, 0 failed after correcting the backend launch test's expected backend version. Desktop CI also passes on the corresponding test-fix commit; see the candidate record below.
-- **Windows UI checks:** PARTIAL PASS — user confirms the Context panel shows the saved context and newly added Memory items are present. This does not establish all selection-switching, workspace switching, filtering, error, claims, settings, credential, or process-shutdown checks.
+- **Windows UI checks:** PARTIAL PASS — user confirms the Context panel shows the saved context and newly added Memory items are present. This does not establish all selection-switching, workspace switching, filtering, error, Claims, settings, credential, or process-shutdown checks.
+- **Claims UI scope (source-verified):** the desktop panel supports claim search/detail inspection, status updates, evidence/assessment/relationship display, contradiction comparison, and open-question creation/state updates. It has no manual claim-creation or evidence/assessment/relationship-authoring controls. These authoring workflows are explicitly deferred beyond M9 and are not an M8 failure or acceptance requirement.
 - **Backend automated tests:** GitHub Actions PASS for the candidate implementation; a Windows `uv run pytest` result has not yet been reported.
 - **Overall M8 status:** NOT ACCEPTED. Automated CI and the reported UI checks are useful evidence, but the full Windows acceptance checklist remains incomplete.
 
@@ -106,7 +107,7 @@ Verify in the running app:
 2. Create a project and conversation; send a chat turn through the local provider.
 3. Open Context and confirm the saved packet, included sources, excluded sources, and compiler metadata match the completed run.
 4. Open Memory; filter scopes/states, add a memory item, and mark an active item outdated.
-5. Open Claims; inspect a claim's status/evidence/assessments, compare a contradiction pair, and create/update an open question.
+5. Open Claims; search and select an existing claim; inspect its status, evidence, assessments, and relationships; compare a contradiction pair; update its status; and create/update an open question. Do not expect manual claim/source/evidence/assessment/relationship authoring in M8; those desktop workflows are deferred beyond M9.
 6. Open Settings; confirm both remote-memory switches initially default off, save a change and reload to verify persistence, and confirm the displayed data directory is under the expected Windows user-data location.
 7. Save and delete a test provider key; confirm the UI never displays the saved value and the selected OS storage backend is not `basic_text`.
 8. Close the app normally; verify the supervised Python backend process exits and no orphan remains.
