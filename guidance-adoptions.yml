@@ -12,8 +12,8 @@ adoptions:
       version: "1.6.0"
       commit: "264da140f5eefb016e8449ff94d4a38df92559ed"
     effective_revision:
-      version: "1.9.0"
-      commit: "6ee853bbe6e2bff27844294702f708530d9354d3"
+      version: "1.9.1"
+      commit: "0ef4f9451cbd206f2509ba7b9ffe621591bf1894"
     update_policy: follow-current
     deviations:
       - "SMH-Tree maps M0-M10 milestones to workflow passes as documented in Build-spec.md."
@@ -25,8 +25,8 @@ adoptions:
       version: "0.1.1"
       commit: "04896128dc8b6946e6209b85efc9319591df3d77"
     effective_revision:
-      version: "0.2.0"
-      commit: "51272473428672a448f194d0717bb59b36a96c23"
+      version: "0.2.1"
+      commit: "dd58244cce6ba355667c645b5918fa67b518b1d5"
     update_policy: follow-current
     deviations: []
   - name: Testing and Verification
