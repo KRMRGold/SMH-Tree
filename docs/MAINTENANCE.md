@@ -1,5 +1,20 @@
 # Maintenance
 
+## Current resume checkpoint — cross-chat pilot
+
+- **Checkpoint purpose:** Preserve the active M8 repair state so a fresh chat can resume without relying on prior conversation history. This is a project-document checkpoint, not an application feature or a claim that the local working tree was saved.
+- **Remote repository snapshot inspected:** `main` at `03726d8f42619705665f284509644c92b610cdb6` (2026-11-16). This checkpoint documentation update creates a newer commit; re-read current `main` and this record before resuming.
+- **Local working tree:** UNKNOWN — no access to the user's local checkout was available. Uncommitted or unpushed changes may exist and must be preserved and inspected locally before further implementation.
+- **Last accepted backend state:** M7, backend `0.7.0`, commit `9d525efd333812abdbca17e1a22efff610f063d0`.
+- **Active candidate:** M8 repair candidate, backend `0.8.1` and desktop `0.8.3`, implementation commit `e74a8f2cda43718ba91f2dd3a64abff474314400`. M8 remains **NOT ACCEPTED**.
+- **Candidate source history:** `main` is 21 commits ahead of the implementation commit. The compared changes are documentation/roadmap updates plus the desktop backend-version test expectation correction; no later application implementation change was reported by the comparison.
+- **Verification:** Backend CI PASS on the implementation commit; Desktop CI PASS on `f6a62352b20e3413ad7453f9e8dc29f0719b5e09`; user-reported Windows desktop tests PASS (16/16); Windows UI verification PARTIAL. Windows backend tests and remaining manual acceptance checks are outstanding. See `docs/TEST_RECORD.md`.
+- **Existing runtime checkpoints:** M7 LangGraph checkpoints persist individual chat/extraction workflow state in `checkpoints.db`. They do not replace this project-level development checkpoint or a cross-chat handoff.
+- **Guidance:** `guidance-adoptions.yml` records current Meta-Modules effective revisions. Initial workflow adoption provenance remains 1.6.0; current canonical workflow is 1.9.0.
+- **Next action:** Resume M8 verification from the checklist in `docs/TEST_RECORD.md`: run Windows backend `uv run pytest`, then complete the remaining Windows desktop/runtime checks. Do not begin M9 until M8 is accepted.
+- **Resume rule:** Verify current remote `main`, then inspect local `git status` and any local commits/unpushed changes before editing. Do not reset, clean, overwrite, or assume the remote snapshot includes local work.
+
+
 ## M8 — Desktop shell candidate (in progress)
 
 - **Current repair candidate desktop version:** 0.8.3.
@@ -29,9 +44,11 @@
 - **M2 acceptance:** Accepted on 2026-11-11. Both `backend-v0.2.0` (failed candidate) and `backend-v0.2.1` (passing candidate) were created and independently verified against their exact commit targets.
 - **M0 acceptance:** Accepted on 2026-11-11. The user explicitly chose to proceed without creating the required backend-v0.0.3 Git tag. This is a documented workflow exception, not a claim that the tag exists.
 - **M1 acceptance:** Accepted on 2026-11-11. The required backend-v0.1.0 tag was created and verified. It points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, a documentation follow-up commit whose code tree retains the tested M1 implementation from b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00.
-- **Workflow:** [Development State Machine Workflow](https://github.com/KRMRGold/Meta-Modules/blob/main/workflows/Development-State-Machine-Workflow.md), current canonical version 1.6.1. Project adoption provenance remains 1.6.0 as recorded in Build-spec.md.
+- **Workflow:** [Development State Machine Workflow](https://github.com/KRMRGold/Meta-Modules/blob/main/workflows/Development-State-Machine-Workflow.md), current canonical version 1.9.0. Initial project adoption provenance remains 1.6.0; see `guidance-adoptions.yml` for effective revisions.
 - **Testing module:** Testing and Verification 0.1.2.
-- **Continuity module:** Context Continuity 0.1.2.
+- **Continuity module:** Context Continuity 0.2.0.
+- **Security module:** Cybersecurity and Secure Engineering 0.1.0.
+- **Review/execution modules:** Code Review and Change Assurance 0.1.0; Sandboxing and Safe Execution 0.1.0.
 
 
 ## M3 — Remote gate and audit (accepted)
