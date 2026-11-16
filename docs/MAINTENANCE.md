@@ -10,7 +10,7 @@
 - **Candidate source history:** `main` is 21 commits ahead of the implementation commit. The compared changes are documentation/roadmap updates plus the desktop backend-version test expectation correction; no later application implementation change was reported by the comparison.
 - **Verification:** Backend CI PASS on the implementation commit; Desktop CI PASS on `f6a62352b20e3413ad7453f9e8dc29f0719b5e09`; user-reported Windows desktop tests PASS (16/16); Windows UI verification PARTIAL. Windows backend tests and remaining manual acceptance checks are outstanding. See `docs/TEST_RECORD.md`.
 - **Existing runtime checkpoints:** M7 LangGraph checkpoints persist individual chat/extraction workflow state in `checkpoints.db`. They do not replace this project-level development checkpoint or a cross-chat handoff.
-- **Guidance:** `guidance-adoptions.yml` records current Meta-Modules effective revisions. Initial workflow adoption provenance remains 1.6.0; current canonical workflow is 1.9.0.
+- **Guidance:** `guidance-adoptions.yml` records current Meta-Modules effective revisions. Initial workflow adoption provenance remains 1.6.0; current canonical workflow is 1.9.1.
 - **Next action:** Resume M8 verification from the checklist in `docs/TEST_RECORD.md`: run Windows backend `uv run pytest`, then complete the remaining Windows desktop/runtime checks. Do not begin M9 until M8 is accepted.
 - **Resume rule:** Verify current remote `main`, then inspect local `git status` and any local commits/unpushed changes before editing. Do not reset, clean, overwrite, or assume the remote snapshot includes local work.
 
@@ -46,7 +46,7 @@
 - **M1 acceptance:** Accepted on 2026-11-11. The required backend-v0.1.0 tag was created and verified. It points to 263c07c1568060a6cd44d1fb144cf06d5fb9601d, a documentation follow-up commit whose code tree retains the tested M1 implementation from b278b3b9c2e70b35ab76f4ed27ee8c1c3e706c00.
 - **Workflow:** [Development State Machine Workflow](https://github.com/KRMRGold/Meta-Modules/blob/main/workflows/Development-State-Machine-Workflow.md), current canonical version 1.9.0. Initial project adoption provenance remains 1.6.0; see `guidance-adoptions.yml` for effective revisions.
 - **Testing module:** Testing and Verification 0.1.2.
-- **Continuity module:** Context Continuity 0.2.0.
+- **Continuity module:** Context Continuity 0.2.1.
 - **Security module:** Cybersecurity and Secure Engineering 0.1.0.
 - **Review/execution modules:** Code Review and Change Assurance 0.1.0; Sandboxing and Safe Execution 0.1.0.
 
