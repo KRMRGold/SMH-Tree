@@ -1,5 +1,14 @@
 # Decisions
 
+## Cross-project guidance and pause/resume
+
+- **Linked guidance adoption:** Meta-Modules remains the canonical source. SMH-Tree records initial and effective source revisions, exact commits, and `follow-current` policy in the root `guidance-adoptions.yml`. Guidance changes are reviewed and accepted; they do not silently rewrite project instructions or implementation.
+- **Initial effective set:** Development State Machine Workflow 1.9.0; Context Continuity 0.2.0; Testing and Verification 0.1.2; Cybersecurity and Secure Engineering 0.1.0; Code Review and Change Assurance 0.1.0; Sandboxing and Safe Execution 0.1.0. Initial workflow adoption provenance remains 1.6.0.
+- **Pause/resume:** Development work may be checkpointed at any workflow stage using existing canonical project records. A checkpoint is not required to be a Git commit and must preserve/describe dirty local state rather than resetting it. A portable fresh-chat handoff supplements, but does not replace, the project records.
+- **Pilot status:** The project-level resume checkpoint and test plan are documented in `docs/MAINTENANCE.md` and `docs/TEST_RECORD.md`. Fresh-session reconstruction and interruption tests have not yet been run.
+- **Implementation boundary:** Existing M7 LangGraph persistence resumes individual runtime workflows. It is separate from development-state and cross-chat continuity.
+
+
 This is the project's living decision log. Add concise entries when an implementation choice resolves an ambiguity or departs from the build specification.
 
 ## Initial implementation decisions
