@@ -1,5 +1,3 @@
-## M8 user-reported verification update
-
 ## Cross-chat project checkpoint pilot — designed, not yet tested
 
 - **Purpose:** Test whether a fresh assistant session can resume SMH-Tree work from canonical project records without reconstructing decisions from the previous chat.
@@ -11,6 +9,7 @@
 - **Interruption tests:** Repeat the handoff at implementation, source review, test failure, and acceptance-gate stages. Confirm that each checkpoint distinguishes committed from uncommitted work, preserves failures and exact candidate identity, and gives one actionable next step.
 - **Current result:** NOT RUN. This section defines a test plan; it is not evidence that a fresh-session resume test has passed.
 
+## M8 user-reported verification update
 
 - **Desktop automated tests:** PASS — user reports Windows `npm test` completed with 16 passed, 0 failed after correcting the backend launch test's expected backend version. Desktop CI also passes on the corresponding test-fix commit; see the candidate record below.
 - **Windows UI checks:** PARTIAL PASS — user confirms the Context panel shows the saved context and newly added Memory items are present. This does not establish all selection-switching, workspace switching, filtering, error, Claims, settings, credential, or process-shutdown checks.
