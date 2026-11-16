@@ -1,5 +1,17 @@
 ## M8 user-reported verification update
 
+## Cross-chat project checkpoint pilot — designed, not yet tested
+
+- **Purpose:** Test whether a fresh assistant session can resume SMH-Tree work from canonical project records without reconstructing decisions from the previous chat.
+- **Checkpoint source:** `docs/MAINTENANCE.md` current resume checkpoint; `docs/TEST_RECORD.md` for exact verification evidence; `Build-spec.md` and `docs/decisions.md` for requirements and accepted decisions; `guidance-adoptions.yml` for exact Meta-Modules revisions.
+- **Remote baseline:** GitHub `main` was inspected at `03726d8f42619705665f284509644c92b610cdb6` before the checkpoint documentation updates. Verify current `main` when resuming.
+- **Local state limitation:** The local Windows checkout and its working tree were not accessible during checkpoint creation. Local modified/untracked files and unpushed commits are therefore UNKNOWN and must be inspected before work continues.
+- **Test distinction:** Existing M7 LangGraph tests verify runtime workflow recovery after backend restart. They do not test development-state preservation or cross-chat continuity.
+- **Acceptance test:** Start a fresh chat with only the repository and checkpoint references. Verify it can identify the accepted M7 baseline, M8 candidate and NOT ACCEPTED status, exact CI/user test evidence, remaining M8 checks, relevant adopted guidance, and the correct next action without claiming unknown local state.
+- **Interruption tests:** Repeat the handoff at implementation, source review, test failure, and acceptance-gate stages. Confirm that each checkpoint distinguishes committed from uncommitted work, preserves failures and exact candidate identity, and gives one actionable next step.
+- **Current result:** NOT RUN. This section defines a test plan; it is not evidence that a fresh-session resume test has passed.
+
+
 - **Desktop automated tests:** PASS — user reports Windows `npm test` completed with 16 passed, 0 failed after correcting the backend launch test's expected backend version. Desktop CI also passes on the corresponding test-fix commit; see the candidate record below.
 - **Windows UI checks:** PARTIAL PASS — user confirms the Context panel shows the saved context and newly added Memory items are present. This does not establish all selection-switching, workspace switching, filtering, error, Claims, settings, credential, or process-shutdown checks.
 - **Claims UI scope (source-verified):** the desktop panel supports claim search/detail inspection, status updates, evidence/assessment/relationship display, contradiction comparison, and open-question creation/state updates. It has no manual claim-creation or evidence/assessment/relationship-authoring controls. These authoring workflows are planned for M9 and are not an M8 failure or acceptance requirement.
