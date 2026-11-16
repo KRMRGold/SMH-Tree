@@ -46,7 +46,9 @@ This section records adoption per the workflow's own setup rules. The reusable w
 | Item | Value |
 |---|---|
 | Adopted workflow | Development State Machine Workflow, internal `version: 1.6.0` (adoption provenance only; follow the current canonical workflow unless a pin with a Git SHA or tag is recorded here) |
-| Current guidance | Follow current canonical Development State Machine Workflow (`1.9.0`); initial adoption provenance remains `1.6.0` |\n| Optional modules | Testing and Verification (`0.1.2`); Context Continuity (`0.2.0`); Cybersecurity and Secure Engineering (`0.1.0`); Code Review and Change Assurance (`0.1.0`); Sandboxing and Safe Execution (`0.1.0`) |\n| Guidance adoption record | `guidance-adoptions.yml` records exact source paths, versions, Git commits, and update policy |
+| Current guidance | Follow current canonical Development State Machine Workflow (`1.9.0`); initial adoption provenance remains `1.6.0` |
+| Optional modules | Testing and Verification (`0.1.2`); Context Continuity (`0.2.0`); Cybersecurity and Secure Engineering (`0.1.0`); Code Review and Change Assurance (`0.1.0`); Sandboxing and Safe Execution (`0.1.0`) |
+| Guidance adoption record | `guidance-adoptions.yml` records exact source paths, versions, Git commits, and update policy |
 | Initial design | this file, `BUILD_SPEC.md` (S1 and S2 are complete; S3 is satisfied per milestone) |
 | Maintenance document | `docs/MAINTENANCE.md` |
 | Latest test record | `docs/TEST_RECORD.md` |
