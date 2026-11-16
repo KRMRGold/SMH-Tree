@@ -1,6 +1,6 @@
 # Cognitive Platform: Build Specification (Desktop MVP)
 
-**Spec version:** 0.6.0. This is a living document: update it in place and let Git history keep prior revisions.
+**Spec version:** 0.6.1. This is a living document: update it in place and let Git history keep prior revisions.
 
 Derived from "Distributed Cognitive Architecture v0.4". The vision document says what the system should become. This document says exactly what to build first, and in what order. Where the two disagree, this document wins for the MVP.
 
