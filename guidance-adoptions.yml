@@ -1,0 +1,79 @@
+schema_version: "1"
+project: SMH-Tree
+guidance_source:
+  repository: KRMRGold/Meta-Modules
+  canonical_branch: main
+adoptions:
+  - name: Development State Machine Workflow
+    type: specialized-workflow
+    source:
+      path: workflows/Development-State-Machine-Workflow.md
+    initial_adoption:
+      version: "1.6.0"
+      commit: "a8d4b258b9b39c3a086ae37f2cfa17afb3598f15"
+    effective_revision:
+      version: "1.9.0"
+      commit: "6ee853bbe6e2bff27844294702f708530d9354d3"
+    update_policy: follow-current
+    deviations:
+      - "SMH-Tree maps M0-M10 milestones to workflow passes as documented in Build-spec.md."
+  - name: Context Continuity
+    type: foundational
+    source:
+      path: modules/context-continuity.md
+    initial_adoption:
+      version: "0.1.1"
+      commit: "c6e3f32ddd4a10254f0dc68f692dcd3db325b713"
+    effective_revision:
+      version: "0.2.0"
+      commit: "51272473428672a448f194d0717bb59b36a96c23"
+    update_policy: follow-current
+    deviations: []
+  - name: Testing and Verification
+    type: specialized
+    source:
+      path: modules/testing-and-verification.md
+    initial_adoption:
+      version: "0.1.1"
+      commit: "279a54472d728c23af2b20327bb21395256f0932"
+    effective_revision:
+      version: "0.1.2"
+      commit: "2d996f4b46022023edbdb669a25819c37bd0d41b"
+    update_policy: follow-current
+    deviations: []
+  - name: Cybersecurity and Secure Engineering
+    type: specialized
+    source:
+      path: modules/cybersecurity-and-secure-engineering.md
+    initial_adoption:
+      version: "0.1.0"
+      commit: "85d25ca407a4df36d37f3c4375613e77d5d5acb8"
+    effective_revision:
+      version: "0.1.0"
+      commit: "85d25ca407a4df36d37f3c4375613e77d5d5acb8"
+    update_policy: follow-current
+    deviations: []
+  - name: Code Review and Change Assurance
+    type: specialized
+    source:
+      path: modules/code-review-and-change-assurance.md
+    initial_adoption:
+      version: "0.1.0"
+      commit: "57b9fb6e9658590bdd3bd24f96e70a92509eb1f2"
+    effective_revision:
+      version: "0.1.0"
+      commit: "57b9fb6e9658590bdd3bd24f96e70a92509eb1f2"
+    update_policy: follow-current
+    deviations: []
+  - name: Sandboxing and Safe Execution
+    type: specialized
+    source:
+      path: modules/sandboxing-and-safe-execution.md
+    initial_adoption:
+      version: "0.1.0"
+      commit: "76a00e9f2d3a2c847fb87392ff4bb64c25644dcd"
+    effective_revision:
+      version: "0.1.0"
+      commit: "76a00e9f2d3a2c847fb87392ff4bb64c25644dcd"
+    update_policy: follow-current
+    deviations: []
