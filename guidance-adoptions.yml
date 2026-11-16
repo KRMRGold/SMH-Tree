@@ -12,8 +12,8 @@ adoptions:
       version: "1.6.0"
       commit: "264da140f5eefb016e8449ff94d4a38df92559ed"
     effective_revision:
-      version: "1.9.1"
-      commit: "0ef4f9451cbd206f2509ba7b9ffe621591bf1894"
+      version: "1.9.2"
+      commit: "2ab8a7052ac4efc569f614f7d46a3c2735089123"
     update_policy: follow-current
     deviations:
       - "SMH-Tree maps M0-M10 milestones to workflow passes as documented in Build-spec.md."
