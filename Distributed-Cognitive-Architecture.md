@@ -1,5 +1,5 @@
 # Distributed Cognitive Architecture
-**Design Document — v0.5**
+**Design Document — v0.6**
 
 ## 1. Vision
 
@@ -357,6 +357,40 @@ Potential interface categories include knowledge retrieval, memory retrieval and
 
 A component should be usable independently through its own interface when practical. This also allows separate applications to share the same cognitive infrastructure.
 
+### 7.7 Tool interoperability and model adaptation
+
+**Model Context Protocol (MCP)** is a standard interface through which compatible AI clients can discover and invoke tools, and access other explicitly exposed context. It is an interoperability layer, not a model, agent framework, database, or replacement for the platform's own API.
+
+For SMH-Tree, a future MCP adapter could expose selected platform capabilities to external AI clients or agent runtimes, for example:
+
+- Search authorized project context and knowledge.
+- Retrieve conversation or branch history.
+- Read selected claims, sources, and evidence.
+- Start an explicitly permitted workflow.
+- Propose a memory or knowledge update for user review.
+
+The intended boundary is:
+
+```text
+AI client / agent
+       |
+   MCP adapter
+       |
+SMH-Tree application API
+       |
+services, permissions, context compiler, and canonical SQLite data
+```
+
+The existing application API and backend remain authoritative. MCP should adapt stable application operations into discoverable tools; it should not become a second business-logic layer or access SQLite directly. The same backend authorization, project/branch scope checks, validation, provenance, remote-use rules, and audit requirements must apply whether an operation arrives through the desktop UI, the API, or MCP. Mutating capabilities should be narrowly allowlisted, with consequential actions requiring the appropriate user authorization. An MCP connection must not implicitly grant access to all stored context or permit arbitrary filesystem, shell, or database access.
+
+MCP is optional. It is most useful when SMH-Tree needs to interoperate with multiple external AI clients or agent systems. The desktop application can continue calling its own backend API directly; it does not need to route every internal operation through MCP.
+
+**Model training tools are a separate concern.** Soup is an example of a model-development toolkit for preparing datasets, fine-tuning and evaluating models, and serving trained models through an API. Its own MCP server exposes Soup operations to compatible clients; that does not make Soup itself an MCP alternative, nor does it automatically expose SMH-Tree's data or capabilities. A future SMH-Tree deployment could optionally use a Soup-trained model through a compatible model-provider adapter, while using a separate SMH-Tree MCP adapter to expose platform tools.
+
+Training or fine-tuning should remain an optional model lifecycle capability, not a foundational dependency. Prefer the existing adaptation mechanisms—context compilation, persistent memory, versioned instructions, retrieval, tools, and workflow changes—when they solve the problem. Consider fine-tuning only when evaluations show a persistent behavior gap that cannot be addressed adequately through those mechanisms and when suitable training data, compute, evaluation, and model distribution are available. A trained model must remain replaceable and must not own canonical project knowledge or permissions.
+
+These are future interoperability and experimentation options, not MVP scope or an adoption decision. Evaluate them against concrete use cases before implementation.
+
 ## 8. Cognitive Network
 
 The architecture should support specialized agents rather than relying on one model to perform every task.
@@ -407,7 +441,7 @@ The system should develop capabilities primarily through its external infrastruc
 
 Rather than requiring model retraining whenever something changes, the architecture can adapt through persistent memory, updated knowledge graphs, new skills and procedures, improved retrieval, better context assembly, specialist agents, tool integrations, updated workflows, and accumulated evaluations and feedback.
 
-The underlying models become replaceable reasoning engines.
+The underlying models become replaceable reasoning engines. Fine-tuning may be used as an optional way to improve a model's task behavior, but it is not the default mechanism for keeping the platform current; persistent context, retrieval, tools, and workflows should carry changing project knowledge.
 
 A better model can be introduced without discarding the accumulated knowledge and operational infrastructure. Likewise, an individual model can be replaced without losing conversation continuity.
 
