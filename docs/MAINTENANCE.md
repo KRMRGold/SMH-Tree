@@ -1,5 +1,15 @@
 # Maintenance
 
+## Architecture documentation update — post-M10 application capabilities
+
+- **Scope:** Documentation-only extension to the distributed architecture and build roadmap.
+- **Added:** Capability Registry, separate task/agent/model/capability routing responsibilities, interactive application-state integration, human-guided editing, targeted modifications, execution provenance, verification, and security boundaries.
+- **Examples:** Blender, CAD, video editing, and audio production are illustrative future adapters, not selected dependencies.
+- **Schedule:** Explicitly post-M10. No change to M8 verification, M9 sequencing, M10 acceptance, or MVP implementation scope.
+- **Implementation status:** NOT IMPLEMENTED. No application code, schema, dependency, or runtime behavior changed.
+- **Design principle:** Natural language expresses intent; direct manipulation provides precision; structured application state preserves continuity; independent verification checks results.
+
+
 ## Current resume checkpoint — cross-chat pilot
 
 - **Checkpoint purpose:** Preserve the active M8 repair state so a fresh chat can resume without relying on prior conversation history. This is a project-document checkpoint, not an application feature or a claim that the local working tree was saved.
