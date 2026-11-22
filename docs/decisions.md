@@ -105,3 +105,14 @@ This is the project's living decision log. Add concise entries when an implement
 - **M10 — Packaging and E2E:** move the existing PyInstaller sidecar, Electron Forge installer, clean-Windows-machine validation, and Playwright smoke tests to M10.
 - **Acceptance/version boundary:** M8 remains unchanged and must be accepted before M9 begins. M9 must be accepted before M10 begins. The MVP `1.0.0` transition and S11 milestone-document gate occur only after M10 is accepted.
 - **Deferred beyond MVP:** Model Manager and Model Router remain post-M10; this schedule change does not pull them into M9 or M10.
+
+
+## Post-M10 capability-oriented execution and interactive application control
+
+- **Architecture direction:** Extend the existing execution/integration architecture with a versioned Capability Registry, Task/Agent Router, Capability Router, and Execution Manager. Keep these distinct from the existing Model Manager and Model Router responsibilities.
+- **Specialist model:** A specialist is a reusable role configuration (instructions, skills, scoped context, required model abilities, allowed capabilities, and verification expectations), not a model permanently bound to one role. Reuse existing models first; fine-tuning remains optional and evidence-driven.
+- **Application interaction:** Integrations should be bidirectional. They must expose relevant structured application state, accept narrowly scoped operations, and report resulting state/diffs. Native APIs are preferred over screenshot-only interpretation when available.
+- **Human intervention:** Direct user edits, selections, annotations, and parameter changes are authoritative current state. Agents must reconcile against updated application state and must not overwrite user intervention through whole-project regeneration.
+- **Execution assurance:** Record operation provenance, approvals, affected resources, before/after state where practical, and independent verification. Distinguish successful invocation, application validity, requirement satisfaction, and user acceptance.
+- **MCP boundary:** MCP may transport capability calls but is not the capability registry, authorization layer, or business-logic owner. Native APIs and other adapters remain supported; all paths use the existing backend permissions and audit rules.
+- **Schedule:** This is post-M10 architecture only. It does not expand or block M8, M9, or M10, and it does not authorize implementation before MVP acceptance.
