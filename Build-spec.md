@@ -744,6 +744,77 @@ This capability is post-MVP, outside M0–M10. It must not delay or alter the M8
 - Remote routing is blocked by default and cannot bypass the existing remote gate.
 - Tests cover inventory changes, load/unload failures, selection precedence, fallback, concurrent requests, and remote-permission invariants.
 
+
+### Post-M10 extension: capability-oriented task execution and interactive application control
+
+This extension builds on the post-M10 Model Manager and Model Router. It is architectural scope only; it does not expand M0–M10, change their acceptance gates, or authorize implementation before the MVP is accepted.
+
+**Goal:** allow a coordinator to delegate work to replaceable specialist agents and models, discover the application capabilities required for a task, execute operations through application integrations, and incorporate direct user intervention into the same task.
+
+**Separate responsibilities:**
+
+1. **Capability Registry** — stores discoverable, versioned capability definitions and operation contracts. Each definition describes schemas, required application/runtime, model abilities, preconditions, side effects, permissions, approval requirements, and verification procedures.
+2. **Task/Agent Router** — selects a specialist role or workflow based on task intent and required capabilities.
+3. **Model Router** — selects an eligible model/provider using capability profiles, availability, resource constraints, user preferences, and the existing remote gate.
+4. **Capability Router** — resolves requested operations to MCP tools, native APIs, or other application adapters.
+5. **Execution Manager** — coordinates plans, dependencies, checkpoints, retries, cancellation, and recovery.
+6. **Interactive State Adapter** — reads relevant application state and reports user or agent changes using structured identifiers and state diffs where available.
+7. **Verification Layer** — checks application-specific invariants and requested outcomes independently of the model that proposed or executed the change.
+
+**Specialist definition:** a specialist is a reusable role configuration consisting of instructions, skills, scoped context, required model abilities, allowed capabilities, and verification expectations. It is not permanently bound to a particular model. Existing models should be reused first; fine-tuning is optional and requires evaluation evidence of a persistent behavior gap.
+
+**Interactive editing workflow:**
+
+1. Coordinator interprets the requested outcome and produces an inspectable task plan.
+2. Agent and model routing select eligible execution resources.
+3. Capability routing resolves application operations and checks permissions.
+4. The application adapter reads current state and performs narrowly scoped operations.
+5. The user can inspect the result and intervene directly in the native application through selection, parameter changes, annotations, guides, or manual edits.
+6. The adapter reports the updated state or scoped diff.
+7. The specialist continues from the updated state rather than overwriting the user's intervention.
+8. Verification reports operation success, application validity, requirement satisfaction, and unresolved issues separately.
+
+**Correctness and security invariants:**
+
+- Prefer targeted operations or patches over whole-project regeneration.
+- User-authored changes are authoritative current state unless the user explicitly requests otherwise.
+- Detect stale application state and conflicting edits before applying a patch.
+- Screenshots may supplement structured application state but should not replace it when the application exposes reliable identifiers and properties.
+- Record task, agent, model/provider, capability/operation, target resources, parameters, approvals, results, and verification outcomes in execution provenance.
+- Preserve a pre-operation checkpoint or recoverable state where practical.
+- MCP is an optional capability transport, not the registry, authorization system, or business-logic layer. Native APIs and other adapters remain valid.
+- All execution paths use the existing backend authorization, scope validation, audit, and remote-processing rules.
+- No specialist, model, or MCP integration receives unrestricted filesystem, shell, network, database, or application scripting access by default.
+- Model routing cannot grant remote permission. Application state and project files must not be transmitted remotely without the applicable explicit permission.
+- Destructive or consequential operations require user approval according to risk and policy.
+- Capability and application adapters remain independently replaceable.
+
+**Initial application examples:** Blender scene construction and animation; CAD geometry and assembly modification; video timeline editing; audio session and effect control. These are examples for later evaluation, not mandatory dependencies.
+
+**Implementation progression:**
+
+- First define the capability schema and registry interface without selecting a mandatory application.
+- Prototype one read-only application adapter and verify state discovery.
+- Add a narrowly scoped mutation with before/after state capture and rollback or recovery.
+- Add user-guided intervention and state reconciliation.
+- Add specialist/model routing only after capability invocation and permissions are reliable.
+- Expand to additional applications through adapters rather than application-specific branches in the coordinator.
+
+**Acceptance criteria for a future implementation:**
+
+- Capabilities can be discovered and validated against versioned schemas.
+- A task plan identifies specialist, model requirements, operations, affected resources, permissions, and verification criteria.
+- Only currently available and authorized capabilities can execute.
+- Application state can be inspected before and after an operation.
+- A targeted operation changes only its declared resources, or reports additional effects.
+- User edits made between agent operations are detected and preserved.
+- Stale-state conflicts pause execution for reconciliation.
+- Execution provenance identifies the actual model, agent, tools, operations, approvals, and results.
+- Verification distinguishes successful invocation from application validity and requirement satisfaction.
+- Remote-processing and application permissions cannot be bypassed through routing or MCP.
+- Tests cover denied operations, unavailable adapters, schema mismatch, stale state, user intervention, partial failure, recovery, and remote-permission boundaries.
+
+
 ## 14. Resolved open questions (from v0.4 section 15)
 
 | Question | MVP answer |
