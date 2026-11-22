@@ -391,6 +391,80 @@ Training or fine-tuning should remain an optional model lifecycle capability, no
 
 These are future interoperability and experimentation options, not MVP scope or an adoption decision. Evaluate them against concrete use cases before implementation.
 
+
+### 7.8 Capability-Oriented Task Execution
+
+The integration layer should expose application and domain capabilities as discoverable, versioned contracts. A capability describes an operation that an agent can request without binding that operation permanently to one model or agent.
+
+A capability definition should identify:
+- Stable capability and operation identifiers.
+- Description, input/output schemas, and version.
+- Required application, runtime, provider, or external service.
+- Required model abilities, such as vision, tool calling, long context, or structured output.
+- Preconditions, application-state requirements, and expected side effects.
+- Permission scope, risk classification, and user-approval requirements.
+- Validation and verification procedures.
+- Relevant skills, instructions, examples, and known limitations.
+
+Capabilities may be implemented through MCP servers, native application APIs, command interfaces, or other adapters. MCP is one transport and discovery mechanism, not the capability registry itself. The registry should normalize metadata and expose a stable contract regardless of implementation.
+
+The registry describes what can be done; it does not itself authorize execution. Authorization remains enforced by the backend and the relevant application adapter.
+
+### 7.9 Task, Agent, Model, and Capability Routing
+
+Routing responsibilities should remain distinct:
+
+- **Task/Agent Router:** Selects an appropriate specialist role or workflow for the requested outcome.
+- **Model Router:** Selects an eligible model/provider based on task requirements, model profiles, availability, resource constraints, user preferences, and remote-processing permissions.
+- **Capability Router:** Resolves the application operations and integrations required to perform the task.
+- **Execution Manager:** Coordinates dependencies, checkpoints, retries, cancellation, result collection, and recovery.
+
+A specialist agent is a role definition, not a dedicated model instance. It may use an existing model with role instructions, scoped context, skills, and capabilities. Model fine-tuning is optional and should be considered only when evaluation demonstrates a persistent behavior gap that prompting, context, retrieval, tools, or workflow changes do not adequately address.
+
+A task plan should be inspectable before consequential execution. It should identify the intended operations, affected resources, dependencies, required permissions, expected outputs, and verification criteria. The system should be able to pause for clarification or approval rather than silently guessing.
+
+### 7.10 Interactive Application State and Human-Guided Editing
+
+Application integrations should support bidirectional interaction rather than one-way command execution.
+
+The integration should be able to retrieve relevant application state, perform authorized operations, and report resulting state changes. Depending on the application, state may include selected objects, geometry, transforms, constraints, timeline position, tracks, keyframes, layers, effects, camera settings, or active document identifiers.
+
+The user should be able to intervene directly in the native application and provide structured guidance such as:
+- Selecting an object, region, track, layer, or timeline range.
+- Moving or adjusting an element manually.
+- Adding annotations, guides, reference points, or constraints.
+- Changing parameters through the application's own controls.
+- Accepting, rejecting, or refining a proposed operation.
+
+The application adapter should report the resulting state or a scoped state diff so the agent can continue from the user's actual edits. Screenshots may supplement this information but should not replace structured application state when the application exposes it.
+
+**Targeted modification is the default.** Agents should issue narrow operations or patches against identified resources rather than regenerate or replace an entire project. User-authored changes must be treated as authoritative current state unless the user explicitly requests otherwise. Before applying a patch, the executor should detect stale state or conflicting edits and request reconciliation where necessary.
+
+### 7.11 Execution Provenance and Verification
+
+Application operations should be represented in the execution graph with their task, agent, model/provider, capability and operation identifiers, input references, target resources, permission decision, result, and verification outcome.
+
+Where practical, preserve:
+- A pre-operation state reference or recoverable checkpoint.
+- The exact operation parameters and affected resource identifiers.
+- A post-operation state reference or diff.
+- User approvals and manual interventions.
+- Validation results, warnings, and unresolved uncertainty.
+
+Verification should be application- and domain-specific. Examples include geometry and tolerance checks in CAD, object and constraint checks in 3D scenes, timeline and media-reference checks in video editing, and signal/routing checks in audio or electronics workflows. A successful API call or visually plausible render is not proof that the requested result is correct.
+
+The system should distinguish operation success, application validity, requirement satisfaction, and user acceptance. These are separate outcomes.
+
+### 7.12 Security and Execution Boundaries
+
+Capability invocation must use the existing application API, permission model, and audit boundaries. An MCP server or specialist agent must not bypass authorization by accessing canonical storage or unrestricted host resources directly.
+
+Capabilities should be scoped to the user, application, project, conversation, branch, agent, and external service as appropriate. Consequential or destructive operations should require explicit approval according to their risk and configured policy. Filesystem, shell, network, and application scripting access must be narrowly allowlisted.
+
+Remote model selection must continue to obey the per-request remote gate. Routing must not silently transmit project files, application state, or context to an external provider. The actual model/provider, capability calls, approvals, and data transfers should remain inspectable in execution provenance.
+
+These capabilities are post-MVP architectural extensions. They do not expand M0–M10 acceptance scope.
+
 ## 8. Cognitive Network
 
 The architecture should support specialized agents rather than relying on one model to perform every task.
