@@ -747,6 +747,62 @@ This capability is post-MVP, outside M0–M10. It must not delay or alter the M8
 
 ### Post-M10 extension: capability-oriented task execution and interactive application control
 
+
+### Post-M10 extension: model adaptation and teacher–student training
+
+This extension complements the post-M10 Model Manager and Model Router. It is architectural scope only, outside M0–M10; it does not change milestone acceptance gates or authorize implementation before the MVP is accepted.
+
+**Goal:** allow SMH-Tree to improve task-specific local model capability when evidence shows that existing models, instructions, context, retrieval, tools, and workflows are insufficient. A stronger teacher model may help develop or evaluate a smaller student model, but the system must remain useful without training infrastructure or remote models.
+
+**Separate responsibilities:**
+
+1. **Model Manager** — runtime inventory, availability, and explicit load/unload operations for inference models.
+2. **Model Router** — selects the best eligible model for each inference task using measured capability, modality/tool requirements, context limits, latency, local hardware/resource fit, availability, user preference, and remote permission.
+3. **Model Adaptation Pipeline** — optional development-time workflow for dataset preparation, training/adaptation jobs, evaluation, artifact versioning, and controlled promotion/rollback. It does not manage ordinary inference or own canonical knowledge.
+4. **Teacher/evaluator role** — a temporary role that can be fulfilled by an existing local or remote model; it may generate candidate examples, critique outputs, or provide evaluation signals. It is not a permanently assigned model identity.
+5. **Student model** — a candidate model or adapter adapted for a narrow, measurable capability and deployed only if it passes evaluation.
+
+**Adaptation choices:** choose the least complex mechanism that addresses the observed gap. Improve prompts, structured output constraints, context compilation, retrieval, capability contracts, and execution workflows before changing weights. Use external retrieval for changing, attributable, or private knowledge. Consider supervised fine-tuning or parameter-efficient adapters such as LoRA/QLoRA for stable behavior gaps. Consider knowledge distillation when a stronger teacher consistently demonstrates a target behavior that a smaller candidate cannot yet reproduce. Synthetic data may supplement curated examples but is not ground truth and must be labeled, reviewed, and traceable.
+
+**Candidate lifecycle:**
+
+1. Define a narrow target capability, representative task set, and measurable acceptance criteria.
+2. Establish a baseline and preserve held-out evaluation examples.
+3. Diagnose whether failures originate in the model or in instructions, context, retrieval, tools, application integration, or workflow.
+4. Prepare a versioned dataset. Record source, provenance, synthetic/curated status, permissions, filtering, and quality review.
+5. Select a base model and adaptation method appropriate to the capability and available hardware/compute.
+6. Record the teacher (if used), base model identity/license, dataset revision, training configuration, adapter or resulting artifact identity, and resource requirements.
+7. Evaluate task performance and regressions against the baseline. Include relevant instruction-following, structured output/tool use, safety, and out-of-domain checks.
+8. Promote only an accepted candidate into the available model catalog; retain the prior version and a rollback path. A candidate must never silently replace a pinned or currently selected model.
+
+**Routing and deployment criteria:**
+
+- Do not select by parameter count or model name alone. Use measured task results and verified capability profiles.
+- Consider RAM/VRAM, quantization, context limits, required modalities, tool-call reliability, latency, availability, and offline/local requirements.
+- The router remains deterministic and transparent initially; learned routing may advise but cannot override permissions or resource constraints.
+- A smaller model may coordinate application work through versioned capabilities and native APIs. The model need not encode an entire application's functionality; precise operations remain in the application adapter and are verified against returned state.
+- A specialist remains a role configuration unless a dedicated adapted artifact has a demonstrated benefit.
+
+**Data, privacy, and authority invariants:**
+
+- Teacher-generated examples are synthetic candidates, not authoritative facts. Preserve provenance and review quality before training.
+- Apply existing scope, remote-use, and audit rules before sending any user/project data to a teacher or external training service. No implicit remote permission.
+- Do not include secrets or private memory by default. Training data use requires an explicit, scoped basis and must respect the same data boundaries as other system operations.
+- Model weights must not become the source of truth for conversation history, project state, permissions, user preferences, or frequently changing facts. Keep those in canonical storage, scoped memory, or retrieval.
+- Training is optional. Core memory, retrieval, tool execution, and workflow behavior must not depend on a training service.
+- Preserve artifact provenance, evaluation results, compatibility requirements, and rollback information. Never promote an unverified candidate.
+
+**Initial acceptance criteria for a future adaptation pipeline:**
+
+- A target behavior and baseline are defined before training begins.
+- Dataset and artifact provenance are inspectable and permission checks are enforced.
+- Teacher use and remote data transmission obey the existing remote gate.
+- Candidate evaluation includes target performance and relevant regression checks.
+- Model Router exposes the selected artifact and selection rationale.
+- Promotion is explicit, reversible, and does not silently change conversation pins.
+- The system remains functional when training infrastructure or teacher models are unavailable.
+
+
 This extension builds on the post-M10 Model Manager and Model Router. It is architectural scope only; it does not expand M0–M10, change their acceptance gates, or authorize implementation before the MVP is accepted.
 
 **Goal:** allow a coordinator to delegate work to replaceable specialist agents and models, discover the application capabilities required for a task, execute operations through application integrations, and incorporate direct user intervention into the same task.
