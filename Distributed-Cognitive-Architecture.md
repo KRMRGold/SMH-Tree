@@ -392,6 +392,38 @@ Training or fine-tuning should remain an optional model lifecycle capability, no
 These are future interoperability and experimentation options, not MVP scope or an adoption decision. Evaluate them against concrete use cases before implementation.
 
 
+#### Model adaptation lifecycle: teacher, student, and specialist models
+
+The model ecosystem may optionally improve local models by using a more capable model as a **teacher** and a smaller or more efficient model as a **student**. This is a development-time workflow, not a requirement that every request consult a large model.
+
+A teacher may help produce candidate examples, demonstrate target behavior, critique student outputs, or provide evaluation signals. Curated examples can then be used for supervised fine-tuning or knowledge distillation. Parameter-efficient approaches such as LoRA/QLoRA may be preferable to full fine-tuning when they meet the target quality and hardware constraints. Synthetic examples are candidate training material, not ground truth: they need provenance, quality checks, and representative human or deterministic review before being promoted into a training set.
+
+Keep the responsibilities distinct:
+
+- **Model Manager:** discovers and manages installed/loaded inference models and their runtime availability.
+- **Model Router:** chooses an eligible model for a particular inference task.
+- **Model Adaptation Pipeline:** optionally prepares versioned datasets, runs or delegates adaptation jobs, evaluates candidate artifacts, and promotes or rolls back model versions. It does not own inference routing or canonical project data.
+- **Teacher/evaluator roles:** temporary roles that may be fulfilled by an existing local or remote model; they are not permanently bound to a specific provider or model.
+
+Use the least complex mechanism that closes the measured gap. Try prompt and schema improvements, better context, retrieval, tools, and workflow changes first. Use RAG or the existing knowledge/memory stores for information that changes, needs citations, or must remain inspectable. Consider fine-tuning when a stable task behavior remains unreliable across representative cases. Consider distillation when a capable teacher demonstrates a repeatable capability that a smaller candidate fails to reproduce and the smaller candidate is worth deploying for latency, memory, cost, or offline use.
+
+A candidate adaptation cycle should:
+
+1. Define the target capability and measurable acceptance criteria.
+2. Capture a baseline using representative held-out tasks and relevant regression checks.
+3. Diagnose whether the gap belongs to the model, instructions, context, retrieval, tools, or execution workflow.
+4. Prepare a versioned dataset with source/provenance, permission, quality, and privacy checks. Teacher-generated examples must be labeled as synthetic and reviewed; remote teacher use remains subject to the existing per-request remote gate and transmission audit.
+5. Select the lightest suitable method (for example, supervised fine-tuning, LoRA/QLoRA, or teacher-to-student distillation) and record the base model, training configuration, dataset revision, and resulting artifact identity.
+6. Evaluate the candidate against the same held-out target set and broader regression checks, including instruction following, structured/tool output, safety behavior, and unrelated capabilities likely to be affected.
+7. Promote only after the candidate meets the acceptance criteria; retain the previous eligible model/adapter and a clear rollback path.
+
+Training data and model artifacts must not silently absorb private conversation history, user memory, secrets, or project records. Apply scope and remote-sharing permissions before any teacher or training service receives data. A model's learned behavior is not a substitute for the canonical SQLite record, scoped memory, epistemic provenance, retrieval, or access control. Do not train changing facts, permissions, user preferences, or project state into weights when those belong in external, updateable sources.
+
+Model routing should compare measured task suitability alongside model capabilities, context limits, modality and tool-call reliability, local RAM/VRAM and quantization requirements, latency, availability, user preference, and remote-processing permission. Hardware fit and evaluation evidence matter more than parameter count or model name. A small specialist model can be useful when paired with reliable application APIs and capability contracts: the model interprets and coordinates intent; the application performs exact operations and reports structured results.
+
+Adaptation is optional and evidence-driven. It must not become a prerequisite for SMH-Tree's core memory, retrieval, tool, or workflow capabilities, and a trained model must remain replaceable. These are post-M10 design options, not an implementation or training decision.
+
+
 ### 7.8 Capability-Oriented Task Execution
 
 The integration layer should expose application and domain capabilities as discoverable, versioned contracts. A capability describes an operation that an agent can request without binding that operation permanently to one model or agent.
