@@ -34,6 +34,20 @@ This is the project's living decision log. Add concise entries when an implement
 - **Resource policy:** Begin with explicit load/unload controls. Defer automatic keep-warm and idle-unload policies until memory-pressure and concurrency behavior are measured.
 - **Schedule:** This is a post-M10 capability. It does not expand or block acceptance of M8, M9, or M10.
 
+
+
+## Future model adaptation and teacher–student design
+
+- **Optional development-time capability:** model training/adaptation is separate from ordinary inference, runtime model management, and task routing. It remains post-M10 and is not required by core SMH-Tree functionality.
+- **Teacher/student relationship:** a stronger model may generate candidate examples, critique outputs, or provide evaluation signals for a smaller student. Teacher-generated data is synthetic candidate material, not ground truth; preserve provenance and review it before training.
+- **Adaptation order:** first test instructions, structured outputs, context, retrieval, tools, and workflow changes. Use external retrieval for changing or attributable knowledge. Consider fine-tuning/LoRA/QLoRA for stable behavior gaps and distillation when a teacher demonstrates a repeatable capability worth transferring to a smaller model.
+- **Separate component boundary:** Model Manager owns inference-model runtime lifecycle; Model Router selects models for requests; a future Model Adaptation Pipeline owns dataset preparation, adaptation jobs, candidate evaluation, artifact versioning, and explicit promotion/rollback.
+- **Evaluation gate:** compare candidates with a preserved baseline and held-out target tasks; include relevant regressions in instruction following, structured/tool output, safety, and unrelated capabilities. Do not promote solely because training completed.
+- **Data authority and privacy:** model weights do not replace canonical memory, project state, permissions, or retrieval. Training datasets require provenance and scoped permission; teacher calls or external training must obey the existing remote gate and audit.
+- **Routing criteria:** use measured capability and task fit alongside modality/tool reliability, context limits, latency, RAM/VRAM, quantization, availability, user preference, and remote permission—not parameter count alone.
+- **Deployment:** adapted artifacts remain replaceable, versioned, and reversible. Do not silently replace pinned models or change the selected model for an existing conversation.
+- **Schedule:** post-M10 design only; no expansion of M0–M10 and no implementation authorization.
+
 ## M1 decisions
 
 - **UUIDv7:** Implement UUIDv7 generation using Python's standard-library uuid.UUID and secrets, because Python 3.12 does not provide uuid.uuid7(). This avoids adding a dependency and keeps ID generation in Python.
