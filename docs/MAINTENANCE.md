@@ -1,6 +1,15 @@
 # Maintenance
 
 ## Architecture documentation update — post-M10 application capabilities
+## Architecture documentation update — post-M10 model adaptation
+
+- **Scope:** Documentation-only extension to the post-M10 model lifecycle and routing design.
+- **Added:** Optional teacher/student workflows, synthetic-data provenance and review, supervised fine-tuning/LoRA/QLoRA and distillation as evidence-driven choices, candidate evaluation, model artifact versioning, controlled promotion/rollback, hardware-aware routing, and boundaries between learned behavior and external memory/retrieval/tools.
+- **Schedule:** Explicitly post-M10. No change to M8 verification, M9 sequencing, M10 acceptance, or MVP implementation scope.
+- **Implementation status:** NOT IMPLEMENTED. No training pipeline, application code, schema, dependency, model artifact, or runtime behavior changed.
+- **Design principle:** Adapt weights only for demonstrated stable behavior gaps; keep changing knowledge, project state, permissions, and user memory in authoritative external systems.
+
+## Architecture documentation update — post-M10 application capabilities
 
 - **Scope:** Documentation-only extension to the distributed architecture and build roadmap.
 - **Added:** Capability Registry, separate task/agent/model/capability routing responsibilities, interactive application-state integration, human-guided editing, targeted modifications, execution provenance, verification, and security boundaries.
