@@ -1,5 +1,5 @@
 # Distributed Cognitive Architecture
-**Design Document — v0.7**
+**Design Document — v0.8**
 
 ## 1. Vision
 
@@ -471,6 +471,29 @@ The user should be able to intervene directly in the native application and prov
 The application adapter should report the resulting state or a scoped state diff so the agent can continue from the user's actual edits. Screenshots may supplement this information but should not replace structured application state when the application exposes it.
 
 **Targeted modification is the default.** Agents should issue narrow operations or patches against identified resources rather than regenerate or replace an entire project. User-authored changes must be treated as authoritative current state unless the user explicitly requests otherwise. Before applying a patch, the executor should detect stale state or conflicting edits and request reconciliation where necessary.
+
+#### Shared attention and progressive precision
+
+The user should be able to act on their own intuition at any project scale without having to translate every detail into technical terminology or reconstruct the surrounding context in a prompt. Conversation is one interface to a shared cognitive workspace, not the only means of interaction.
+
+- Support deictic communication: pointing, selecting, highlighting, drawing arrows or regions over a screenshot or live view, and accompanying these gestures with text or speech (for example, "move this here").
+- Make shared attention bidirectional. Agents should be able to highlight referenced objects, dependencies, alternative placements, and affected regions for the user to inspect and correct.
+- Ground references in stable application/object identifiers, artifact revisions, view coordinates and transforms, selection scope, and relevant state. Preserve annotations as separate layers; a screenshot alone is not authoritative application state. Where grounding is uncertain, present candidates or ask for clarification rather than silently editing.
+- Allow progressive precision: move freely between broad natural-language intent, visual annotation, direct manipulation, exact property values, and source-level editing. These interfaces should operate on the same underlying artifact rather than divergent copies.
+- Integrate reusable property inspectors where available, using application-specific adapters (including MCP where appropriate). Prefer deterministic property updates or constraint solving for exact edits; use models for ambiguous intent and semantic grounding.
+- Distinguish instance, component, page, project and shared-definition scope. Preview affected objects and proposed changes, preserve unrelated state, detect conflicting revisions, and provide undo or recoverable checkpoints where supported.
+- Persist meaningful object references and associated discussion, decisions, edits and provenance in the appropriate project/branch scope. Selecting an object later should allow retrieval of its relevant history without loading the entire project or treating stale references as current state. Handle renamed, moved and deleted objects explicitly.
+
+Examples include marking a website layout, sketching a 3D silhouette or animation path, selecting a waveform or timeline range, highlighting writing passages, and manipulating knowledge graph relationships. The interaction contract should be shared, while grounding, editing and verification remain domain-specific.
+
+Prior art to evaluate:
+- [Put-That-There](https://doi.org/10.1145/800250.807503): speech and pointing, deictic interaction.
+- [Sketch-n-Sketch](https://ravichugh.github.io/sketch-n-sketch/): output-directed and bidirectional programming.
+- [Design Mode](https://github.com/SandeepBaskaran/design-mode): visual web editing and agent integration.
+- [Onlook](https://github.com/onlook-dev/onlook): visual editing of application code.
+- [DragDiffusion](https://github.com/Yujun-Shi/DragDiffusion): point-directed image manipulation; distinguish pixel-level generation from structured artifact editing.
+
+Suggested post-MVP prototype: one browser adapter supporting element selection, screenshot annotation, stable element references, reciprocal highlighting, property inspection, scoped patches and preview/undo. Evaluate reference resolution accuracy, scope errors, preservation of unrelated state, revision conflicts, context retrieval and user effort before generalizing to other applications. These are research candidates, not adopted dependencies or new milestone acceptance requirements.
 
 ### 7.11 Execution Provenance and Verification
 
