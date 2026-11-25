@@ -1,5 +1,5 @@
 # Distributed Cognitive Architecture
-**Design Document — v0.6**
+**Design Document — v0.7**
 
 ## 1. Vision
 
@@ -898,6 +898,25 @@ The existing remote-transmission gate remains authoritative. Automatic routing c
 **Resource-aware lifecycle**
 
 Keep-warm and idle-unload policies are later refinements. Begin with explicit load/unload controls and runtime-reported status. Add automatic unloading or preloading only after testing memory pressure, model-switch latency, and concurrent requests. Never assume all installed models fit in memory.
+
+### 16.12 Compute-adaptive inference and looped model research
+
+Research reference: [Thinking Machines Lab — Inkling 2 Mini](https://thinkingmachines.ai/news/inkling-2-mini/). Treat reported results as research evidence to investigate, not independently reproduced performance or a dependency decision.
+
+Looped/recurrent transformer architectures reuse model weights across internal processing passes, potentially increasing effective computational depth without proportional weight storage growth. This complements the teacher/student and specialist adaptation lifecycle in §7.7 and the resource-aware router in §16.11.
+
+Post-MVP implementation candidates:
+
+- Extend model profiles with supported reasoning controls, fixed or adjustable internal depth, total and active parameter counts, quantization, context limits, estimated memory requirements, and runtime compatibility. Unknown capabilities remain unknown; do not infer adjustable depth from a model being looped.
+- Introduce optional per-task compute budgets (latency, output tokens, memory, and provider-supported reasoning effort or loop count). Start with explicit user presets and deterministic routing; adaptive selection is a later experiment.
+- Keep internal model recurrence separate from external agent iteration, tool calls, verification, and persistent memory. Repeated internal processing is not durable knowledge retention and should not replace the context compiler or memory graph.
+- Compare conventional, sparse/MoE, looped, distilled, and specialist models under equivalent hardware and task conditions. Active parameters are not the total weight footprint; account for KV cache, runtime overhead, CPU offloading, and model-switch costs.
+- Where supported, evaluate escalating compute on the same model before switching to a larger model or invoking a specialist. Enforce cancellation, bounded retries, resource ceilings, and the existing remote permission gate. Never silently escalate to remote processing.
+- Evaluate teacher/student distillation and expert pruning as optional offline research paths when task-specific evidence justifies them; check licensing, data provenance, and regression risks before training.
+
+Record requested and effective reasoning settings where exposed, actual model/runtime version, quantization, latency, peak RAM/VRAM, task success, tool-call validity, instruction adherence, and factual reliability. Compare quality against resource cost on representative SMH-Tree workloads, including context retrieval, branch continuity, structured tool calls, and verification. Do not equate longer reasoning with better answers or claim access to hidden internal reasoning.
+
+Suggested sequence: capability discovery and profiling; reproducible local evaluation; explicit compute presets; bounded adaptive routing only if measurements show a benefit. Preserve model independence and existing acceptance scope (M0–M10). No particular model or inference runtime is required by this proposal.
 
 ## 17. Overall Direction
 
