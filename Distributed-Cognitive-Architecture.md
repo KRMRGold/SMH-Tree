@@ -1,5 +1,5 @@
 # Distributed Cognitive Architecture
-**Design Document — v0.8**
+**Design Document — v0.9**
 
 ## 1. Vision
 
@@ -487,6 +487,7 @@ The user should be able to act on their own intuition at any project scale witho
 Examples include marking a website layout, sketching a 3D silhouette or animation path, selecting a waveform or timeline range, highlighting writing passages, and manipulating knowledge graph relationships. The interaction contract should be shared, while grounding, editing and verification remain domain-specific.
 
 Prior art to evaluate:
+- [Cursor Design Mode](https://cursor.com/blog/design-mode): primary interaction-design reference, as identified by the user. Study its combination of live application context, visual pointing and annotation, direct property adjustment, and agent-assisted source changes. Aim for a comparable collaborative editing experience across application domains, with reciprocal grounding, persistent object context and scoped modifications. This is a UX reference, not a required dependency or a commitment to reproduce its implementation.
 - [Put-That-There](https://doi.org/10.1145/800250.807503): speech and pointing, deictic interaction.
 - [Sketch-n-Sketch](https://ravichugh.github.io/sketch-n-sketch/): output-directed and bidirectional programming.
 - [Design Mode](https://github.com/SandeepBaskaran/design-mode): visual web editing and agent integration.
