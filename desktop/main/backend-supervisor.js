@@ -30,15 +30,18 @@ async function terminateProcessTree(child, platform, spawnProcess) {
 
   if (platform === "win32") {
     if (child.pid == null) return;
-    await new Promise((resolve) => {
+    const killedTree = await new Promise((resolve) => {
       const killer = spawnProcess(
         "taskkill",
         ["/pid", String(child.pid), "/T", "/F"],
         { windowsHide: true, stdio: "ignore" },
       );
-      killer.once("error", resolve);
-      killer.once("close", resolve);
+      killer.once("error", () => resolve(false));
+      killer.once("close", (code) => resolve(code === 0));
     });
+    if (!killedTree && child.exitCode === null && child.signalCode === null) {
+      child.kill();
+    }
     return;
   }
 
@@ -126,7 +129,7 @@ export class BackendSupervisor {
         COGPLAT_DATA_DIR: this.dataDir,
       },
       windowsHide: true,
-      stdio: "ignore",
+      stdio: process.env.SMH_TREE_BACKEND_DIAGNOSTICS === "1" ? ["ignore", "ignore", "inherit"] : "ignore",
     });
     this.child = child;
 

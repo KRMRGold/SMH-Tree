@@ -165,7 +165,9 @@ def compile_context(
         )
 
     original_user = req.current_user_message
-    user_message = ChatMessage(role="user", content=original_user)
+    user_message = ChatMessage(
+        role="user", content=original_user, images=list(req.current_user_images),
+    )
     transformations: list[dict[str, object]] = []
     mandatory_tokens = system_tokens + _count(token_counter, [user_message])
     if mandatory_tokens > input_budget:
@@ -173,7 +175,7 @@ def compile_context(
         truncated, omitted_chars = _truncate_head_tail(
             original_user, available, token_counter
         )
-        user_message = ChatMessage(role="user", content=truncated)
+        user_message = user_message.model_copy(update={"content": truncated})
         transformations.append(
             {
                 "type": "head_tail_truncation",

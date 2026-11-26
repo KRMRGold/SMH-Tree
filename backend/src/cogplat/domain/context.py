@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol, Sequence
 
-from cogplat.domain.chat import ChatMessage
+from cogplat.domain.chat import ChatImage, ChatMessage
 
 if TYPE_CHECKING:
     from cogplat.services.permissions import AccessContext
@@ -25,6 +25,7 @@ class CompileRequest:
     max_input_tokens: int
     reserve_output_tokens: int
     compiler_version: str = "m6.0.0"
+    current_user_images: Sequence[ChatImage] = ()
 
 
 class TokenCounter(Protocol):
@@ -32,7 +33,7 @@ class TokenCounter(Protocol):
 
 
 class DefaultTokenCounter:
-    """Conservative character-based estimate with per-message role overhead."""
+    """Estimate text tokens with per-message role overhead, excluding image tokens."""
 
     def count_messages(self, messages: Sequence[ChatMessage]) -> int:
         return sum(4 + math.ceil(len(message.content) / 3.5) for message in messages)
@@ -59,8 +60,8 @@ class ContextPacket:
         return [str(item["ref"]) for item in self.included_sources]
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            "messages": [message.model_dump() for message in self.messages],
+        packet: dict[str, object] = {
+            "messages": [message.model_dump(exclude={"images"}) for message in self.messages],
             "included_sources": self.included_sources,
             "excluded_sources": self.excluded_sources,
             "token_estimate": self.token_estimate,
@@ -74,6 +75,10 @@ class ContextPacket:
             "model": self.model,
             "compiler_version": self.compiler_version,
         }
+        image_count = sum(len(message.images) for message in self.messages)
+        if image_count:
+            packet["image_count"] = image_count
+        return packet
 
 
 class ContextCompileError(Exception):

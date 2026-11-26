@@ -12,16 +12,20 @@ class RemoteNotAllowed(Exception):
     """A remote provider was selected without explicit per-run consent."""
 
 def authorize_and_audit(connection: sqlite3.Connection, run: dict[str, object], provider: ModelProvider, messages: Sequence[ChatMessage], item_refs: Sequence[str]) -> None:
-    """Authorize and durably audit the canonical role/content packet before network I/O.
+    """Authorize and durably audit the canonical message packet before network I/O.
 
-    byte_count is the UTF-8 byte length of compact JSON role/content messages;
-    HTTP headers and provider/model transport-envelope fields are excluded.
+    byte_count is the UTF-8 byte length of compact JSON messages and their images.
+    HTTP headers and provider/model envelope fields are outside the packet.
     """
     if not provider.is_remote:
         return
     if not bool(run.get("allow_remote", False)):
         raise RemoteNotAllowed("Remote transmission is disabled for this run.")
-    packet = json.dumps([message.model_dump() for message in messages], ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    packet = json.dumps(
+        [message.model_dump(exclude_defaults=True) for message in messages],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
     run_id = str(run["id"])
     refs = [str(ref) for ref in item_refs]
     packet_hash = hashlib.sha256(packet).hexdigest()

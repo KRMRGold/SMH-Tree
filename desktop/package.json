@@ -1,15 +1,29 @@
 {
   "name": "smh-tree-desktop",
-  "version": "0.8.3",
+  "version": "0.10.0",
   "private": true,
   "description": "SMH-Tree desktop shell",
   "type": "module",
   "main": "main/main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node --test"
+    "test": "node --test",
+    "build:backend": "uv run --project ../backend --locked --no-dev --with pyinstaller==6.22.3 pyinstaller --noconfirm --distpath ../backend/dist --workpath ../backend/build ../backend/cogplat.spec",
+    "package": "electron-forge package --platform=win32 --arch=x64",
+    "make": "electron-forge make --platform=win32 --arch=x64",
+    "test:packaged": "node --test e2e/packaged-smoke.mjs"
   },
   "devDependencies": {
-    "electron": "45.3.0"
+    "@electron-forge/cli": "8.0.1",
+    "@electron-forge/maker-squirrel": "8.0.1",
+    "electron": "45.3.0",
+    "playwright": "1.65.1"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "1.0.1"
+  },
+  "productName": "SMH-Tree",
+  "config": {
+    "forge": "./forge.config.cjs"
   }
 }

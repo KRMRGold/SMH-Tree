@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import sqlite3
+from collections.abc import Sequence
 from typing import TypedDict
 
 # The graph state contains only JSON-compatible primitives. Keep msgpack's
@@ -18,7 +19,7 @@ from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from cogplat.domain.chat import ChatMessage
+from cogplat.domain.chat import ChatImage, ChatMessage
 from cogplat.db.connection import connect_db
 from cogplat.domain.context import CompileRequest, ContextCompileError
 from cogplat.domain.epistemic import ClaimType
@@ -43,7 +44,8 @@ class ChatState(TypedDict, total=False):
     provider_id: str
     model: str
     allow_remote: bool
-    messages: list[dict[str, str]]
+    images: list[dict[str, str]]
+    messages: list[dict[str, object]]
     context_source_refs: list[str]
     provider_step_id: str
     assistant_content: str
@@ -78,7 +80,8 @@ class ExtractState(TypedDict, total=False):
 def start_chat(
     connection: sqlite3.Connection, branch_id: str, content: str,
     provider_id: str, model: str, allow_remote: bool,
-) -> tuple[dict[str, object], dict[str, object]]:
+    *, images: Sequence[ChatImage] = (),
+) -> tuple[dict[str, object], ChatState]:
     """Create durable user/run records; context compilation is the graph's first node."""
     branch = conversation_repo.get_branch(connection, branch_id)
     if branch is None:
@@ -97,18 +100,22 @@ def start_chat(
         compile_step = run_repo.create_step(
             connection, str(run["id"]), "context_compile"
         )
-    return run, {
+    state: ChatState = {
         "run_id": str(run["id"]), "branch_id": branch_id,
         "user_message_id": str(user_message["id"]), "content": content,
         "provider_id": provider_id, "model": model, "allow_remote": allow_remote,
         "compile_step_id": str(compile_step["id"]),
     }
+    if images:
+        state["images"] = [image.model_dump() for image in images]
+    return run, state
 
 
 def build_chat_graph(
     connection: sqlite3.Connection, provider: ModelProvider, *,
     provider_label: str, provider_is_remote: bool, api_key: str | None,
     max_input_tokens: int, reserve_output_tokens: int,
+    is_resume: bool = False,
 ):
     async def compile_context_node(state: ChatState) -> dict[str, object]:
         branch = conversation_repo.get_branch(connection, state["branch_id"])
@@ -128,6 +135,7 @@ def build_chat_graph(
                 provider_is_remote=provider_is_remote, model=state["model"],
                 max_input_tokens=max_input_tokens,
                 reserve_output_tokens=reserve_output_tokens,
+                current_user_images=[ChatImage.model_validate(image) for image in state.get("images", [])],
             ),
         )
         packet_data = packet.to_dict()
@@ -149,29 +157,34 @@ def build_chat_graph(
                 connection, state["run_id"], "provider_stream"
             )
         return {
-            "messages": [item.model_dump() for item in packet.messages],
+            "messages": [item.model_dump(exclude_defaults=True) for item in packet.messages],
             "context_source_refs": packet.source_refs,
             "provider_step_id": str(provider_step["id"]),
         }
 
-    async def authorize_node(state: ChatState) -> dict[str, object]:
+    def authorize_messages(state: ChatState, messages: list[ChatMessage]) -> None:
         run = run_repo.get_run(connection, state["run_id"])
         remote_gate.authorize_and_audit(
-            connection, run, provider,
-            [ChatMessage(**item) for item in state["messages"]],
+            connection, run, provider, messages,
             state.get("context_source_refs", []),
         )
+
+    async def authorize_node(state: ChatState) -> dict[str, object]:
+        authorize_messages(state, [ChatMessage(**item) for item in state["messages"]])
         return {}
 
     async def stream_node(state: ChatState) -> dict[str, object]:
+        messages = [ChatMessage(**item) for item in state["messages"]]
+        # A resumed stream may start after the authorization node's checkpoint.
+        if is_resume and provider.is_remote:
+            authorize_messages(state, messages)
         writer = get_stream_writer()
         chunks: list[str] = []
         options: dict[str, object] = {}
         if api_key:
             options["api_key"] = api_key
         async for token in provider.stream_chat(
-            state["model"], [ChatMessage(**item) for item in state["messages"]],
-            **options,
+            state["model"], messages, **options,
         ):
             if not isinstance(token, str):
                 raise TypeError("Provider yielded a non-text token.")
@@ -219,7 +232,7 @@ def build_chat_graph(
 
 async def stream_chat_workflow(
     database_path: str, checkpoint_path: str, connection: sqlite3.Connection,
-    provider: ModelProvider, initial_state: dict[str, object] | None, *,
+    provider: ModelProvider, initial_state: ChatState | None, *,
     provider_label: str, provider_is_remote: bool, api_key: str | None,
     max_input_tokens: int, reserve_output_tokens: int,
     resume_run_id: str | None = None,
@@ -238,6 +251,7 @@ async def stream_chat_workflow(
             provider_is_remote=provider_is_remote, api_key=api_key,
             max_input_tokens=max_input_tokens,
             reserve_output_tokens=reserve_output_tokens,
+            is_resume=initial_state is None,
         ).compile(checkpointer=saver)
         try:
             async for item in graph.astream(
@@ -316,7 +330,7 @@ def build_extraction_graph(
         remote_gate.authorize_and_audit(
             connection, run, provider, [ChatMessage(role="user", content=prompt)], [state["message_id"]]
         )
-        options: dict[str, object] = {}
+        options: dict[str, object] = {"claim_extraction": True}
         if api_key:
             options["api_key"] = api_key
         chunks: list[str] = []

@@ -60,11 +60,15 @@
             <label class="model-field">
               <span>Model</span>
               <input id="model-name" type="text" autocomplete="off" placeholder="Choose or enter a model">
+              <select id="ollama-model" aria-label="Installed Ollama model" hidden></select>
+              <select id="openrouter-model" aria-label="Free OpenRouter model" hidden></select>
             </label>
-            <label class="remote-toggle" id="remote-toggle-wrap" hidden>
-              <input id="allow-remote" type="checkbox">
-              <span>Allow remote for this message</span>
-            </label>
+            <div id="ollama-controls" hidden>
+              <button id="start-ollama" type="button" class="secondary-button">Start Ollama</button>
+              <button id="load-ollama-model" type="button" class="secondary-button" hidden>Load model</button>
+              <span id="ollama-status" role="status"></span>
+            </div>
+            <span id="openrouter-status" role="status" hidden></span>
           </div>
         </header>
 
@@ -93,7 +97,8 @@
         </section>
 
         <section id="claims-panel" class="data-panel" hidden>
-          <header class="panel-heading"><div><div class="eyebrow">KNOWLEDGE RECORDS</div><h2>Claims</h2></div><button type="button" id="refresh-claims" class="secondary-button">Refresh</button></header>
+          <header class="panel-heading"><div><div class="eyebrow">KNOWLEDGE RECORDS</div><h2>Claims</h2></div><div class="settings-actions"><button type="button" id="new-claim" class="primary-button">Add claim</button><button type="button" id="refresh-claims" class="secondary-button">Refresh</button></div></header>
+          <p class="panel-note">The AI can use relevant claims and their status in later replies. Use status to flag an assumption, and link a correction to keep both versions on record.</p>
           <div class="panel-filters"><label>Search claims <input id="claim-search" type="search" placeholder="Find a claim…"></label></div>
           <div class="claims-layout"><div id="claims-list" class="record-list"><p class="muted">Loading claims…</p></div><article id="claim-detail" class="claim-detail"><p class="muted">Select a claim to inspect its status, evidence, and relationships.</p></article></div>
           <section class="open-questions"><header class="panel-heading"><h3>Open questions</h3><button type="button" id="new-open-question" class="secondary-button">Add question</button></header><div id="open-questions-list" class="record-list"></div></section>
@@ -124,7 +129,18 @@
           <div id="message-list" class="message-list" aria-live="polite"></div>
           <div id="chat-status" class="chat-status" role="status" aria-live="polite"></div>
           <form id="composer" class="composer">
-            <textarea id="message-input" rows="3" maxlength="200000" placeholder="Write a message…" required></textarea>
+            <div class="composer-tools" aria-label="Chat tools">
+              <button type="button" id="attach-chat-image" title="Choose images or drop them into Chat">Attach image</button>
+              <button type="button" id="read-chat-file">Read file</button>
+              <button type="button" id="open-web-tools">Web</button>
+              <button type="button" id="open-explorer-tool">Explorer</button>
+              <input id="chat-file" type="file" hidden>
+              <input id="chat-image-picker" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+            </div>
+            <ul id="chat-image-previews" class="chat-images" aria-label="Image attachments" hidden></ul>
+            <div id="chat-image-status" class="chat-image-note" role="status"></div>
+            <div id="chat-image-remote" class="chat-image-note" role="status" hidden></div>
+            <textarea id="message-input" rows="3" maxlength="200000" placeholder="Write a message…"></textarea>
             <div class="composer-footer">
               <span>Enter to send · Shift+Enter for a new line</span>
               <button id="send-button" type="submit">Send <span aria-hidden="true">↗</span></button>
@@ -133,11 +149,214 @@
         </section>
       </main>
     </div>
+    <dialog id="chat-tool-dialog" class="input-dialog" aria-labelledby="chat-tool-title">
+      <form id="chat-tool-form">
+        <h2 id="chat-tool-title">Web tools</h2>
+        <fieldset id="chat-web-fields" class="tool-fields">
+          <label for="chat-web-operation">Tool</label>
+          <select id="chat-web-operation">
+            <option value="page">Read a webpage</option>
+            <option value="search">Search the web</option>
+          </select>
+          <div id="chat-search-server-fields" class="tool-fields" hidden>
+            <label for="chat-search-server">SearXNG server URL</label>
+            <input id="chat-search-server" type="url" maxlength="2048" placeholder="http://localhost:8888">
+            <p class="record-meta tool-note">Use a SearXNG server with JSON results enabled.</p>
+          </div>
+          <label id="chat-web-query-label" for="chat-web-query">Webpage URL</label>
+          <input id="chat-web-query" type="url" maxlength="2048" placeholder="https://example.org" required>
+        </fieldset>
+        <p id="chat-tool-status" class="record-meta tool-note" role="status" hidden></p>
+        <label id="chat-tool-preview-label" for="chat-tool-preview" hidden>Preview before adding to your message</label>
+        <textarea id="chat-tool-preview" rows="8" readonly hidden></textarea>
+        <div class="input-dialog-actions">
+          <button id="close-chat-tool" type="button" class="secondary-button">Close</button>
+          <button id="run-chat-tool" type="submit" class="primary-button">Read webpage</button>
+          <button id="add-chat-tool-result" type="button" class="primary-button" hidden>Add to message</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="explorer-tool-dialog" class="input-dialog" aria-labelledby="explorer-tool-title">
+      <form method="dialog">
+        <h2 id="explorer-tool-title">File Explorer</h2>
+        <label for="explorer-windows">Open window</label>
+        <select id="explorer-windows"></select>
+        <div class="settings-actions">
+          <button id="refresh-explorer-windows" type="button" class="secondary-button">Refresh</button>
+          <button id="inspect-explorer-folder" type="button" class="secondary-button">Inspect folder</button>
+        </div>
+        <p id="explorer-tool-status" class="record-meta tool-note" role="status" hidden></p>
+        <label id="explorer-preview-label" for="explorer-preview" hidden>Folder listing</label>
+        <textarea id="explorer-preview" rows="8" readonly hidden></textarea>
+        <div id="explorer-child-fields" class="tool-fields" hidden>
+          <label for="explorer-child">Subfolder</label>
+          <select id="explorer-child"></select>
+          <button id="open-explorer-child" type="button" class="secondary-button">Open in Explorer</button>
+        </div>
+        <div class="input-dialog-actions">
+          <button id="close-explorer-tool" type="button" class="secondary-button">Close</button>
+          <button id="add-explorer-listing" type="button" class="primary-button" hidden>Add listing to message</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="extraction-dialog" class="input-dialog" aria-labelledby="extraction-heading">
+      <form>
+        <h2 id="extraction-heading">Extract claims</h2>
+        <p class="record-meta">The selected model will propose claims from this message and cite exact excerpts.</p>
+        <p id="extraction-model"></p>
+        <label id="extraction-remote-label" class="setting-toggle" hidden>
+          <input id="extraction-remote" type="checkbox" name="allow_remote">
+          Allow sending this message to the remote provider for this extraction.
+        </label>
+        <p class="panel-error" role="alert" hidden></p>
+        <div class="input-dialog-actions">
+          <button type="button" class="secondary-button">Cancel</button>
+          <button type="submit" class="primary-button">Extract claims</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="relationship-dialog" class="input-dialog" aria-labelledby="relationship-heading">
+      <form>
+        <h2 id="relationship-heading">Add relationship</h2>
+        <p id="relationship-claim" class="record-meta"></p>
+        <label for="relationship-target">Other claim</label>
+        <select id="relationship-target" name="to_claim_id" required></select>
+        <label for="relationship-type">Relationship</label>
+        <select id="relationship-type" name="rel" required>
+          <option value="">Choose a relationship</option>
+          <option value="contradicts">Contradicts</option>
+          <option value="supports">Supports</option>
+          <option value="supersedes">Supersedes</option>
+          <option value="refines">Refines</option>
+          <option value="depends_on">Depends on</option>
+        </select>
+        <label for="contradiction-basis" hidden>Contradiction basis</label>
+        <select id="contradiction-basis" name="contradiction_basis" hidden disabled>
+          <option value="">Choose a basis</option>
+          <option value="direct">Direct</option>
+          <option value="different_time">Different time</option>
+          <option value="different_context">Different context</option>
+          <option value="different_definition">Different definition</option>
+          <option value="unclear">Unclear</option>
+        </select>
+        <label for="relationship-note">Note (optional)</label>
+        <textarea id="relationship-note" name="note" rows="2" maxlength="10000"></textarea>
+        <p class="panel-error" role="alert" hidden></p>
+        <div class="input-dialog-actions">
+          <button type="button" class="secondary-button">Cancel</button>
+          <button type="submit" class="primary-button">Add relationship</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="assessment-dialog" class="input-dialog" aria-labelledby="assessment-heading">
+      <form>
+        <h2 id="assessment-heading">Add assessment</h2>
+        <label for="assessment-dimension">Dimension</label>
+        <select id="assessment-dimension" name="dimension">
+          <option value="source_reliability">Source reliability</option>
+          <option value="evidence_strength">Evidence strength</option>
+          <option value="extraction_reliability">Extraction reliability</option>
+          <option value="verification_status">Verification status</option>
+          <option value="temporal_validity">Temporal validity</option>
+          <option value="argument_strength">Argument strength</option>
+        </select>
+        <label for="assessment-score">Score (0 to 1)</label>
+        <input id="assessment-score" name="value_num" type="number" min="0" max="1" step="any">
+        <label for="assessment-text">Written assessment (instead of a score)</label>
+        <textarea id="assessment-text" name="value_text" rows="2" maxlength="2000"></textarea>
+        <label for="assessment-rationale">Rationale (optional)</label>
+        <textarea id="assessment-rationale" name="rationale" rows="2" maxlength="10000"></textarea>
+        <p class="panel-error" role="alert" hidden></p>
+        <div class="input-dialog-actions">
+          <button type="button" class="secondary-button">Cancel</button>
+          <button type="submit" class="primary-button">Add assessment</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="source-dialog" class="input-dialog" aria-labelledby="source-heading">
+      <form>
+        <h2 id="source-heading">Register source</h2>
+        <p class="record-meta">Records source metadata. The app does not fetch or verify the source.</p>
+        <label for="source-kind">Source type</label>
+        <select id="source-kind" name="kind">
+          <option value="document">Document</option>
+          <option value="url">URL</option>
+          <option value="message">Message</option>
+          <option value="user_statement">User statement</option>
+          <option value="agent_output">Agent output</option>
+          <option value="dataset">Dataset</option>
+        </select>
+        <label for="source-title">Title (optional)</label>
+        <input id="source-title" name="title" maxlength="500">
+        <label for="source-uri">URI or reference (optional)</label>
+        <input id="source-uri" name="uri" maxlength="2000">
+        <p class="panel-error" role="alert" hidden></p>
+        <div class="input-dialog-actions">
+          <button type="button" class="secondary-button">Cancel</button>
+          <button type="submit" class="primary-button">Register source</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="evidence-dialog" class="input-dialog" aria-labelledby="evidence-heading">
+      <form>
+        <h2 id="evidence-heading">Attach evidence</h2>
+        <label for="evidence-source">Source</label>
+        <select id="evidence-source" name="source_id" required></select>
+        <label for="evidence-stance">Stance</label>
+        <select id="evidence-stance" name="stance">
+          <option value="supports">Supports</option>
+          <option value="challenges">Challenges</option>
+          <option value="context">Context</option>
+        </select>
+        <label for="evidence-excerpt">Exact excerpt (optional)</label>
+        <textarea id="evidence-excerpt" name="excerpt" rows="3" maxlength="20000"></textarea>
+        <label for="evidence-locator">Locator (optional)</label>
+        <input id="evidence-locator" name="locator" maxlength="2000" placeholder="Page, section, or timestamp">
+        <p class="panel-error" role="alert" hidden></p>
+        <div class="input-dialog-actions">
+          <button type="button" class="secondary-button">Cancel</button>
+          <button type="submit" class="primary-button">Attach evidence</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="claim-dialog" class="input-dialog" aria-labelledby="claim-dialog-heading">
+      <form id="claim-form">
+        <h2 id="claim-dialog-heading">Add claim</h2>
+        <p id="claim-scope" class="record-meta"></p>
+        <label for="claim-text">Claim text</label>
+        <textarea id="claim-text" name="text" rows="3" maxlength="20000" required autofocus></textarea>
+        <label for="claim-type">Claim type</label>
+        <select id="claim-type" name="claim_type">
+          <option value="factual">Factual</option>
+          <option value="causal">Causal</option>
+          <option value="normative">Normative</option>
+          <option value="predictive">Predictive</option>
+          <option value="definition">Definition</option>
+          <option value="other">Other</option>
+        </select>
+        <details>
+          <summary>Structured fields and validity dates</summary>
+          <div class="claim-fields">
+            <label>Subject <input name="subject" maxlength="2000"></label>
+            <label>Predicate <input name="predicate" maxlength="2000"></label>
+            <label>Object <input name="object" maxlength="2000"></label>
+            <label>Valid from <input type="date" name="valid_from"></label>
+            <label>Valid to <input type="date" name="valid_to"></label>
+          </div>
+        </details>
+        <p id="claim-form-error" class="panel-error" role="alert" hidden></p>
+        <div class="input-dialog-actions">
+          <button id="cancel-claim" type="button" class="secondary-button">Cancel</button>
+          <button id="save-claim" type="submit" class="primary-button">Add claim</button>
+        </div>
+      </form>
+    </dialog>
     <dialog id="input-dialog" class="input-dialog" aria-labelledby="input-dialog-heading">
       <form method="dialog" id="input-dialog-form">
         <h2 id="input-dialog-heading">Enter a value</h2>
         <label for="input-dialog-value" id="input-dialog-label">Value</label>
         <textarea id="input-dialog-value" rows="3"></textarea>
+        <select id="input-dialog-choice" hidden></select>
         <div class="input-dialog-actions">
           <button type="submit" value="cancel" formnovalidate class="secondary-button">Cancel</button>
           <button type="submit" value="submit" class="primary-button">Continue</button>

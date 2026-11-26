@@ -5,6 +5,7 @@ from cogplat.db.connection import connect_db
 from cogplat.main import create_app
 from cogplat.repos import context_snapshots as snapshot_repo
 from cogplat.repos import runs as run_repo
+from cogplat.services import web_tools
 
 
 def make_client(tmp_path):
@@ -69,6 +70,41 @@ def test_transmissions_endpoint_requires_authentication(tmp_path):
     response = client.get("/v1/transmissions", headers={"Authorization": "Bearer test-token"})
     assert response.status_code == 200
     assert response.json() == {"items": []}
+
+
+def test_web_tools_require_auth_and_dispatch_only_the_requested_inputs(tmp_path, monkeypatch):
+    calls = []
+
+    def read_page(url):
+        calls.append(("page", url))
+        raise web_tools.ToolInputError("Choose a public HTTPS address.")
+
+    def search(server_url, query):
+        calls.append(("search", server_url, query))
+        return {"query": query, "results": []}
+
+    monkeypatch.setattr(web_tools, "read_web_page", read_page)
+    monkeypatch.setattr(web_tools, "search_web", search)
+    client = make_client(tmp_path)
+    headers = {"Authorization": "Bearer test-token"}
+    page_body = {"url": "https://example.org"}
+    search_body = {"server_url": "https://search.example.org", "query": "sample topic"}
+
+    assert client.post("/v1/tools/web-page", json=page_body).status_code == 401
+    assert client.post("/v1/tools/web-search", json=search_body).status_code == 401
+    assert calls == []
+    assert client.post("/v1/tools/web-page", json={**page_body, "content": "unused"}, headers=headers).status_code == 422
+
+    invalid = client.post("/v1/tools/web-page", json=page_body, headers=headers)
+    assert invalid.status_code == 400
+    assert invalid.json()["error"]["code"] == "invalid_tool_input"
+    assert client.post("/v1/tools/web-search", json=search_body, headers=headers).json() == {
+        "query": "sample topic", "results": [],
+    }
+    assert calls == [
+        ("page", "https://example.org"),
+        ("search", "https://search.example.org", "sample topic"),
+    ]
 
 
 def test_remote_memory_sharing_settings_are_authenticated_and_default_off(tmp_path):

@@ -12,6 +12,11 @@ dist/
 build/
 *.egg-info/
 
+# Desktop dependencies and build output
+/desktop/node_modules/
+/desktop/out/
+/package-lock.json
+
 # Local configuration and data
 .env
 .env.*
@@ -19,6 +24,8 @@ build/
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
+provider-keys.enc*
 
 # Editors and operating systems
 .vscode/

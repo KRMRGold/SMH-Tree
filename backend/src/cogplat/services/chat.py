@@ -5,9 +5,9 @@ from __future__ import annotations
 import asyncio
 import json
 import sqlite3
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 
-from cogplat.domain.chat import ChatMessage
+from cogplat.domain.chat import ChatImage, ChatMessage
 from cogplat.domain.context import CompileRequest, ContextCompileError
 from cogplat.providers.base import ModelProvider
 from cogplat.repos import context_snapshots as snapshot_repo
@@ -36,6 +36,8 @@ def prepare_chat(
     reserve_output_tokens: int = 1024,
     provider_label: str | None = None,
     provider_is_remote: bool = False,
+    *,
+    images: Sequence[ChatImage] = (),
 ) -> tuple[dict[str, object], dict[str, object], list[ChatMessage]]:
     branch = conversation_repo.get_branch(connection, branch_id)
     if branch is None:
@@ -79,6 +81,7 @@ def prepare_chat(
                 model=model,
                 max_input_tokens=max_input_tokens,
                 reserve_output_tokens=reserve_output_tokens,
+                current_user_images=images,
             ),
         )
     except ContextCompileError as exc:

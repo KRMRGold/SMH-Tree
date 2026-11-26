@@ -598,7 +598,7 @@ Errors use one shape: `{ "error": { "code": "...", "message": "...", "details": 
 ### 11.2 Renderer (vanilla JS, ES modules)
 Screens, kept simple:
 1. **Sidebar**: projects, conversations, branch tree.
-2. **Chat**: message list, composer, streaming output, per-message "branch from here", a provider/model picker, and an explicit **"allow remote for this message"** toggle (off by default).
+2. **Chat**: message list, composer, streaming output, per-message "branch from here", and a provider/model picker. The desktop defaults to a local provider. Selecting a provider labeled remote authorizes submitted chat turns while it is selected, and each turn still carries its own `allow_remote` value.
 3. **Context inspector**: shows the last run's packet (what was sent and what was dropped).
 4. **Memory panel**: list, filter by scope, add, edit, mark outdated.
 5. **Claims panel**: search and inspect claims, scoped status, evidence, assessments, and relationships; compare contradictions side by side; append status updates; and create/update open questions. M8 does not include desktop authoring controls for claims, sources, evidence, assessments, or claim relationships.

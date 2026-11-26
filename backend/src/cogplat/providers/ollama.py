@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
+from urllib.error import HTTPError
 
 from cogplat.domain.chat import ChatMessage
 from cogplat.providers._http import get_json, stream_lines
@@ -25,33 +26,53 @@ class OllamaProvider:
     async def stream_chat(
         self, model: str, messages: list[ChatMessage], **opts: object
     ) -> AsyncIterator[str]:
+        wire_messages = []
+        for message in messages:
+            wire_message: dict[str, object] = {"role": message.role, "content": message.content}
+            if message.images:
+                wire_message["images"] = [image.data for image in message.images]
+            wire_messages.append(wire_message)
+
         payload: dict[str, object] = {
             "model": model,
-            "messages": [message.model_dump() for message in messages],
+            "messages": wire_messages,
             "stream": True,
         }
         if "options" in opts and isinstance(opts["options"], dict):
             payload["options"] = opts["options"]
+        if opts.get("claim_extraction"):
+            payload["format"] = "json"
+            payload["think"] = False
 
-        async for line in stream_lines(
-            f"{self.base_url}/api/chat",
-            {"Content-Type": "application/json"},
-            payload,
-            self.timeout,
-        ):
-            if not line:
-                continue
-            try:
-                item = json.loads(line)
-            except json.JSONDecodeError as exc:
-                raise ProviderError("Ollama returned an invalid stream event.") from exc
-            if item.get("error"):
-                raise ProviderError("Ollama reported a generation error.")
-            content = item.get("message", {}).get("content")
-            if content:
-                yield str(content)
-            if item.get("done"):
-                break
+        has_images = any(message.images for message in messages)
+        image_error = "Ollama could not process the image request. Check that the model supports images."
+        try:
+            async for line in stream_lines(
+                f"{self.base_url}/api/chat",
+                {"Content-Type": "application/json"},
+                payload,
+                self.timeout,
+            ):
+                if not line:
+                    continue
+                try:
+                    item = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise ProviderError("Ollama returned an invalid stream event.") from exc
+                if item.get("error"):
+                    raise ProviderError(image_error if has_images else "Ollama reported a generation error.")
+                content = item.get("message", {}).get("content")
+                if content:
+                    yield str(content)
+                if item.get("done"):
+                    break
+        except ProviderError as exc:
+            if has_images:
+                cause = exc.__cause__
+                if isinstance(cause, HTTPError) and cause.code in {400, 415, 422}:
+                    raise ProviderError(image_error) from None
+                raise exc from None
+            raise
 
     async def embed(self, model: str, texts: list[str]) -> list[list[float]]:
         raise NotImplementedError("Embedding support is not part of M2.")

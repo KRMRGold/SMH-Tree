@@ -11,12 +11,12 @@ DEFAULT_MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 _MIGRATION_NAME = re.compile(r"^(\d+)_.*\.sql$")
 
 
-def connect_db(path: str | Path) -> sqlite3.Connection:
+def connect_db(path: str | Path, *, check_same_thread: bool = True) -> sqlite3.Connection:
     """Open SQLite with the required per-connection pragmas enabled."""
 
     db_path = Path(path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(db_path, timeout=5.0)
+    connection = sqlite3.connect(db_path, timeout=5.0, check_same_thread=check_same_thread)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     connection.execute("PRAGMA journal_mode = WAL")

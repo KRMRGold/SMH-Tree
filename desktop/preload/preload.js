@@ -1,6 +1,9 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("cog", Object.freeze({
+  explorer: (request) => ipcRenderer.invoke("cog:explorer", request),
+  startOllama: () => ipcRenderer.invoke("cog:start-ollama"),
+  loadOllamaModel: (model) => ipcRenderer.invoke("cog:load-ollama-model", model),
   getApiBase: () => ipcRenderer.invoke("cog:get-api-base"),
   getDataDirectory: () => ipcRenderer.invoke("cog:get-data-directory"),
   getSecureStorageStatus: () => ipcRenderer.invoke("cog:get-secure-storage-status"),

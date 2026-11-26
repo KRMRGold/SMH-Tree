@@ -10,7 +10,7 @@ from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query, Reques
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import StrictBool
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 
 from cogplat import __version__
 from cogplat.config import Settings, ensure_data_dir, load_settings
@@ -40,7 +40,34 @@ from cogplat.services import memory as memory_service
 from cogplat.services import epistemic as epistemic_service
 from cogplat.services import workflows as workflow_service
 from cogplat.services import search as search_service
+from cogplat.services import web_tools
 from cogplat.services.permissions import InvalidAccessContext, build_access_context
+
+
+class WebPageToolRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    url: str = Field(min_length=1, max_length=2048)
+
+
+class WebSearchToolRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    server_url: str = Field(min_length=1, max_length=2048)
+    query: str = Field(min_length=1, max_length=300)
+
+
+def invoke_web_tool(tool, *arguments):
+    try:
+        return tool(*arguments)
+    except web_tools.ToolInputError as exc:
+        raise HTTPException(
+            status_code=400, detail={"code": "invalid_tool_input", "message": str(exc)}
+        ) from exc
+    except web_tools.ToolUnavailableError as exc:
+        raise HTTPException(
+            status_code=502, detail={"code": "web_tool_unavailable", "message": str(exc)}
+        ) from exc
 
 
 def create_app(
@@ -101,7 +128,9 @@ def create_app(
             )
 
     def open_database():
-        connection = connect_db(app.state.database_path)
+        # FastAPI may run dependency setup, the handler, and cleanup on
+        # different workers. This connection is used sequentially by one request.
+        connection = connect_db(app.state.database_path, check_same_thread=False)
         try:
             yield connection
         finally:
@@ -112,6 +141,14 @@ def create_app(
             status_code=404,
             detail={"code": "not_found", "message": message},
         )
+
+    @app.post("/v1/tools/web-page", dependencies=[Depends(require_token)])
+    def read_web_page(payload: WebPageToolRequest):
+        return invoke_web_tool(web_tools.read_web_page, payload.url)
+
+    @app.post("/v1/tools/web-search", dependencies=[Depends(require_token)])
+    def search_web(payload: WebSearchToolRequest):
+        return invoke_web_tool(web_tools.search_web, payload.server_url, payload.query)
 
     @app.get("/v1/health", dependencies=[Depends(require_token)])
     def health() -> dict[str, object]:
@@ -285,7 +322,7 @@ def create_app(
             try:
                 run, initial_state = workflow_service.start_chat(
                     connection, branch_id, payload.content, payload.provider,
-                    payload.model, payload.allow_remote,
+                    payload.model, payload.allow_remote, images=payload.images,
                 )
             except LookupError as exc:
                 connection.close()
@@ -322,6 +359,7 @@ def create_app(
                 runtime_settings.default_reserve_output_tokens,
                 provider.label,
                 provider.is_remote,
+                images=payload.images,
             )
         except chat_service.ResourceNotFound as exc:
             connection.close()
