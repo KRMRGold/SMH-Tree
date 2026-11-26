@@ -1,5 +1,15 @@
 # Distributed Cognitive Architecture
-**Design Document — v0.10**
+**Design Document — v0.11**
+
+## Contextual discovery and consideration routing (proposed)
+
+Shared reference: [Contextual Discovery and Consideration Architecture](https://github.com/KRMRGold/Meta-Modules/blob/main/modules/contextual-discovery-and-consideration.md).
+
+Extend scoped context compilation and model/tool routing to discover relevant capabilities, knowledge, considerations, procedures and verification methods from user intent, not only explicit tool names. Candidate sources include Meta-Modules, MCP capabilities, skills, project memory and local registries. Use applicability metadata, semantic retrieval and activity triggers; read selected instructions, rank relevance and risk, deduplicate, preserve provenance and record why candidates were selected or omitted. Keep context budgets and remote-transmission consent intact.
+
+Example: a user asks to publish a blog. Retrieve actual export capabilities and relevant privacy/security/accessibility guidance even if the user did not ask about those topics. Surface proportionate considerations, distinguish deterministic checks from model judgment, and retain user approval for redaction, external transmission and publication. Relevance does not authorize execution.
+
+Expose discovery evidence through the context inspector and preserve user decisions for later branches where scope permits. Evaluate missed considerations, irrelevant interruptions, stale or malicious instructions, unavailable tools, conflicting guidance and privacy boundaries. DVA can consume this discovery layer for contextual actions and inspectable results; Meta-Modules owns shared guidance. This is a research direction, not an accepted milestone or implementation commitment.
 
 ## 1. Vision
 
