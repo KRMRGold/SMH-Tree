@@ -1,5 +1,5 @@
 # Distributed Cognitive Architecture
-**Design Document — v0.9**
+**Design Document — v0.10**
 
 ## 1. Vision
 
@@ -520,6 +520,21 @@ Capabilities should be scoped to the user, application, project, conversation, b
 Remote model selection must continue to obey the per-request remote gate. Routing must not silently transmit project files, application state, or context to an external provider. The actual model/provider, capability calls, approvals, and data transfers should remain inspectable in execution provenance.
 
 These capabilities are post-MVP architectural extensions. They do not expand M0–M10 acceptance scope.
+
+### 7.13 Interactive AI Observability and Intervention
+
+Primary long-term research direction: make AI execution a shared, inspectable and editable workspace, not merely a sequence of chat responses. Observability explains recorded events; intervention lets the user change authorized inputs and compare consequences. Cloud infrastructure supports evaluation rather than defining the product.
+
+- Inspect a selected response or execution node: actual supplied context and source revisions, retrieval candidates and selection decisions where recorded, instruction versions, model/provider and effective settings, routing rules, tool arguments/results, permissions, errors, timing, token counts and known costs. Mark unavailable fields and inferred explanations explicitly; never imply access to hidden model reasoning.
+- Represent execution as a graph of typed events with stable run, parent, branch and resource identifiers. Preserve immutable original traces and distinguish recorded state from proposed edits. Redact secrets and scope access and retention to the project.
+- Expose deliberately selected properties through typed, validated controls with scope, mutability, constraints and supported update paths. Allow direct selection, highlighting and annotation as in section 7.10. Show affected state and preview changes before consequential actions.
+- Fork from a recorded checkpoint to change context, retrieval settings, instructions, model routing or tool configuration without overwriting the original run. Replay only supported operations; default to recorded tool results or isolated fixtures rather than repeating external side effects. Reauthorize live operations and remote transfers. Record nondeterminism, unavailable dependencies and version drift rather than promising identical output.
+- Compare branches using task success, retrieval quality, instruction adherence, tool validity, latency, tokens, cost and human feedback. Keep evaluation separate from execution and preserve negative results.
+- Keep provider-neutral trace and experiment contracts, with optional local and cloud adapters. Do not require cloud services for ordinary chat or inspection.
+
+Suggested post-MVP sequence: extend existing context snapshots and execution provenance into a read-only trace inspector; add validated configuration overrides and branch/replay against local fixtures; add side-by-side evaluation; then consider application adapters and cloud execution when justified. Verify trace fidelity, branch isolation, stale-state detection, permission enforcement, redaction, replay side-effect prevention and metric reproducibility. No new M0–M10 requirements or adopted dependencies.
+
+Cross-references: [Application Property Inspector](https://github.com/KRMRGold/Meta-Modules/blob/main/modules/application-property-inspector.md) for reusable property contracts; [Cloud AI Roadmap](https://github.com/KRMRGold/Meta-Modules/blob/main/roadmaps/SMH-Tree-Cloud-AI-Roadmap.md) for prior-art study, evaluation and portfolio learning. Study observability tools and interactive debuggers before building replacements.
 
 ## 8. Cognitive Network
 
